@@ -1,7 +1,9 @@
 package ch.c0de.pf.orders.common;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -15,7 +17,8 @@ public class ClockConfig {
     // Single source of business time; the offset shifts it for test scenarios
     @Bean
     Clock clock(ClockProperties properties) {
-        Clock system = Clock.systemUTC();
+        // Microsecond ticks match the precision of timestamptz, so values survive a DB round trip unchanged
+        Clock system = Clock.tick(Clock.systemUTC(), Duration.of(1, ChronoUnit.MICROS));
         if (properties.offset().isZero()) {
             return system;
         }

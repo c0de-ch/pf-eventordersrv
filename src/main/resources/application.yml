@@ -17,6 +17,10 @@ spring:
     broker-url: ${ARTEMIS_URL:tcp://localhost:61616}
     user: ${ARTEMIS_USER:artemis}
     password: ${ARTEMIS_PASSWORD:artemis}
+  data:
+    web:
+      pageable:
+        max-page-size: 100
   lifecycle:
     timeout-per-shutdown-phase: 20s
 

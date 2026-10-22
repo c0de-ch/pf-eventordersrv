@@ -1,6 +1,7 @@
 package ch.c0de.pf.orders.order;
 
 import java.math.BigDecimal;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public final class OrderTestData {
 
@@ -16,5 +17,11 @@ public final class OrderTestData {
 
     public static Order newOrder(String customerId) {
         return Order.create(customerId, AMOUNT, "CHF");
+    }
+
+    public static Order persistedOrder(Long id) {
+        Order order = newOrder();
+        ReflectionTestUtils.setField(order, "id", id);
+        return order;
     }
 }

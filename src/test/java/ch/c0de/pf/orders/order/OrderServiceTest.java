@@ -3,16 +3,23 @@ package ch.c0de.pf.orders.order;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
@@ -49,6 +56,15 @@ class OrderServiceTest {
         when(orders.findWithHistoryById(42L)).thenReturn(Optional.of(order));
 
         assertThat(service.get(42L)).isSameAs(order);
+    }
+
+    @Test
+    void findDelegatesFilterAndPaging() {
+        Pageable pageable = PageRequest.of(0, 20);
+        Page<Order> page = new PageImpl<>(List.of(OrderTestData.newOrder()));
+        when(orders.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
+
+        assertThat(service.find(new OrderFilter("12345", OrderStatus.CREATED), pageable)).isSameAs(page);
     }
 
     @Test

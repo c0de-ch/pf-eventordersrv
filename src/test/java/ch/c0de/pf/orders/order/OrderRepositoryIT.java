@@ -18,6 +18,10 @@ import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @DataJpaTest
 @Import({PostgresContainerConfiguration.class, JpaAuditingConfig.class, OrderRepositoryIT.ClockConfiguration.class})
@@ -74,6 +78,22 @@ class OrderRepositoryIT {
         assertThat(reloaded.getCreatedAt()).isEqualTo(T0);
         assertThat(reloaded.getUpdatedAt()).isEqualTo(T0.plusSeconds(5));
         assertThat(reloaded.getVersion()).isEqualTo(1L);
+    }
+
+    @Test
+    void filtersByCustomerAndStatusNewestFirst() {
+        Order older = orders.saveAndFlush(OrderTestData.newOrder("c-filter"));
+        Order newer = orders.saveAndFlush(OrderTestData.newOrder("c-filter"));
+        Order processing = OrderTestData.newOrder("c-filter");
+        processing.markProcessing();
+        orders.saveAndFlush(processing);
+        orders.saveAndFlush(OrderTestData.newOrder("c-other"));
+
+        Page<Order> page = orders.findAll(new OrderFilter("c-filter", CREATED).toSpecification(),
+            PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "id")));
+
+        assertThat(page.getContent()).extracting(Order::getId).containsExactly(newer.getId(), older.getId());
+        assertThat(orders.findAll(new OrderFilter(null, null).toSpecification(), Pageable.unpaged())).hasSize(4);
     }
 
     @Test

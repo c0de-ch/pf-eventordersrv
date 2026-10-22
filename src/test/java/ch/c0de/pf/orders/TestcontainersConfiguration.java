@@ -5,5 +5,5 @@ import org.springframework.context.annotation.Import;
 
 @TestConfiguration(proxyBeanMethods = false)
 @Import({PostgresContainerConfiguration.class, ArtemisContainerConfiguration.class})
-class TestcontainersConfiguration {
+public class TestcontainersConfiguration {
 }

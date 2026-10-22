@@ -21,6 +21,13 @@ class ClockConfigTest {
     }
 
     @Test
+    void ticksInMicrosecondsLikeTheDatabase() {
+        Clock clock = new ClockConfig().clock(new ClockProperties(Duration.ZERO));
+
+        assertThat(clock.instant().getNano() % 1_000).isZero();
+    }
+
+    @Test
     void shiftsTimeByConfiguredOffset() {
         Duration offset = Duration.ofDays(30);
 
