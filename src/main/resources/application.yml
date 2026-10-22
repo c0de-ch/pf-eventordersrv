@@ -27,6 +27,13 @@ spring:
 orders:
   clock:
     offset: PT0S
+  messaging:
+    order-created-queue: order.created
+  outbox:
+    relay:
+      enabled: true
+      poll-interval: PT1S
+      batch-size: 50
 
 server:
   port: 8080

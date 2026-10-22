@@ -27,6 +27,15 @@ curl -s localhost:8080/orders/1
 
 Errors are RFC 9457 problem details (`application/problem+json`); validation failures list `errors[{field, message}]`, illegal status transitions and concurrent updates return `409`. OpenAPI at `/v3/api-docs`, Swagger UI at `/swagger-ui.html`.
 
+## Messaging
+
+Creating an order writes the order and an `OrderCreated` event into the same database transaction (transactional outbox). A relay publishes pending events to the JMS queue `order.created` every second, oldest first, with `FOR UPDATE SKIP LOCKED` so several instances can run. Delivery is at least once; consumers must be idempotent.
+
+| Message | Content |
+|---------|---------|
+| Body (JSON text) | `{"orderId": 1, "customerId": "12345", "amount": 99.90, "currency": "CHF", "occurredAt": "2026-10-22T10:00:00Z"}` |
+| Properties | `_type=OrderCreated`, `eventId=<outbox id>`, `JMSCorrelationID=<orderId>` |
+
 ## Stack
 
 Java 25 · Spring Boot 4.1 · Spring Web MVC · Spring Data JPA · Flyway · PostgreSQL 17 · JMS via ActiveMQ Artemis · Actuator + Micrometer · Testcontainers · Maven wrapper
@@ -40,4 +49,8 @@ Java 25 · Spring Boot 4.1 · Spring Web MVC · Spring Data JPA · Flyway · Pos
 | `ARTEMIS_URL` | `tcp://localhost:61616` | Broker URL |
 | `ARTEMIS_USER`, `ARTEMIS_PASSWORD` | `artemis`, `artemis` | Broker credentials |
 | `SERVER_PORT` | `8080` | HTTP port |
+| `ORDERS_MESSAGING_ORDER_CREATED_QUEUE` | `order.created` | Queue for `OrderCreated` events |
+| `ORDERS_OUTBOX_RELAY_ENABLED` | `true` | Run the outbox relay in this instance |
+| `ORDERS_OUTBOX_RELAY_POLL_INTERVAL` | `PT1S` | Delay between relay runs |
+| `ORDERS_OUTBOX_RELAY_BATCH_SIZE` | `50` | Events per relay transaction |
 | `ORDERS_CLOCK_OFFSET` | `PT0S` | Shifts the application clock (ISO-8601 duration, e.g. `P30D`, `-PT2H`) for test scenarios. Business timestamps follow it; log and trace timestamps stay real. |

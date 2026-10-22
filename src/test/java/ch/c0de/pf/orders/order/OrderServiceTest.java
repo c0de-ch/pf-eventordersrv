@@ -7,12 +7,17 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ch.c0de.pf.orders.outbox.Outbox;
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
@@ -24,11 +29,20 @@ import org.springframework.data.jpa.domain.Specification;
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
 
+    static final Instant NOW = Instant.parse("2026-10-22T10:00:00Z");
+
     @Mock
     OrderRepository orders;
 
-    @InjectMocks
+    @Mock
+    Outbox outbox;
+
     OrderService service;
+
+    @BeforeEach
+    void setUp() {
+        service = new OrderService(orders, outbox, Clock.fixed(NOW, ZoneOffset.UTC));
+    }
 
     @Test
     void createsOrderWithDefaultCurrency() {
@@ -39,6 +53,19 @@ class OrderServiceTest {
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CREATED);
         assertThat(order.getCurrency()).isEqualTo("CHF");
         verify(orders).save(order);
+    }
+
+    @Test
+    void appendsOrderCreatedEventToTheOutbox() {
+        when(orders.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.create(new CreateOrder("12345", new BigDecimal("99.99"), "CHF"));
+
+        ArgumentCaptor<OrderCreatedEvent> event = ArgumentCaptor.forClass(OrderCreatedEvent.class);
+        verify(outbox).append(eq("Order"), any(), eq("OrderCreated"), event.capture());
+        assertThat(event.getValue().customerId()).isEqualTo("12345");
+        assertThat(event.getValue().amount()).isEqualByComparingTo("99.99");
+        assertThat(event.getValue().occurredAt()).isEqualTo(NOW);
     }
 
     @Test
