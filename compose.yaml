@@ -1,0 +1,35 @@
+name: orders
+
+services:
+  postgres:
+    image: postgres:17.11-alpine
+    environment:
+      POSTGRES_DB: orders
+      POSTGRES_USER: orders
+      POSTGRES_PASSWORD: orders
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orders -d orders"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  artemis:
+    image: apache/artemis:2.57.0-alpine
+    environment:
+      ARTEMIS_USER: artemis
+      ARTEMIS_PASSWORD: artemis
+    ports:
+      - "${ARTEMIS_PORT:-61616}:61616"
+      - "${ARTEMIS_CONSOLE_PORT:-8161}:8161"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8161/ || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  pgdata:

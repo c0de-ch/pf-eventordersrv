@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: order-service
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/orders}
+    username: ${DB_USER:orders}
+    password: ${DB_PASSWORD:orders}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  artemis:
+    mode: native
+    broker-url: ${ARTEMIS_URL:tcp://localhost:61616}
+    user: ${ARTEMIS_USER:artemis}
+    password: ${ARTEMIS_PASSWORD:artemis}
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+server:
+  port: 8080
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
