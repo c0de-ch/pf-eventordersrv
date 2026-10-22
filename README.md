@@ -36,6 +36,20 @@ Creating an order writes the order and an `OrderCreated` event into the same dat
 | Body (JSON text) | `{"orderId": 1, "customerId": "12345", "amount": 99.90, "currency": "CHF", "occurredAt": "2026-10-22T10:00:00Z"}` |
 | Properties | `_type=OrderCreated`, `eventId=<outbox id>`, `JMSCorrelationID=<orderId>` |
 
+## Processing
+
+A consumer reads `order.created` in a transacted JMS session, moves the order to `PROCESSING`, simulates work and sets `PROCESSED`. Customer ids starting with `FAIL-` fail permanently; ids starting with `FLAKY-` fail once and succeed on the in-process retry. The broker policy lives in `deploy/artemis/broker.xml` (mounted by compose and used by the tests); after changing it, recreate the broker with `docker compose up -d --force-recreate -V artemis`.
+
+| Situation | Behaviour |
+|-----------|-----------|
+| Processing throws | Session rollback; the broker redelivers after 1 s and 2 s (3 attempts), then moves the message to `DLQ.order.created` |
+| Message in `DLQ.order.created` | Dead-letter consumer sets the order to `FAILED` with a reason |
+| Transient error (`FLAKY-`) | Retried twice in-process with 200 ms delay, no redelivery |
+| Duplicate delivery | Order already final: acknowledged and skipped |
+| Unknown order id | Logged and acknowledged (poison message) |
+| Crash while processing | Order stays `PROCESSING`; the redelivered message resumes it |
+| Broker down | API keeps accepting orders; events wait in the outbox |
+
 ## Stack
 
 Java 25 · Spring Boot 4.1 · Spring Web MVC · Spring Data JPA · Flyway · PostgreSQL 17 · JMS via ActiveMQ Artemis · Actuator + Micrometer · Testcontainers · Maven wrapper
@@ -50,6 +64,11 @@ Java 25 · Spring Boot 4.1 · Spring Web MVC · Spring Data JPA · Flyway · Pos
 | `ARTEMIS_USER`, `ARTEMIS_PASSWORD` | `artemis`, `artemis` | Broker credentials |
 | `SERVER_PORT` | `8080` | HTTP port |
 | `ORDERS_MESSAGING_ORDER_CREATED_QUEUE` | `order.created` | Queue for `OrderCreated` events |
+| `ORDERS_MESSAGING_ORDER_CREATED_DLQ` | `DLQ.order.created` | Dead-letter queue of `order.created` |
+| `ORDERS_WORKER_ENABLED` | `true` | Run the consumers in this instance |
+| `ORDERS_PROCESSING_DELAY` | `PT0.5S` | Simulated processing time |
+| `ORDERS_PROCESSING_FAILING_CUSTOMER_PREFIX` | `FAIL-` | Customer ids whose orders fail permanently |
+| `ORDERS_PROCESSING_FLAKY_CUSTOMER_PREFIX` | `FLAKY-` | Customer ids whose orders fail once |
 | `ORDERS_OUTBOX_RELAY_ENABLED` | `true` | Run the outbox relay in this instance |
 | `ORDERS_OUTBOX_RELAY_POLL_INTERVAL` | `PT1S` | Delay between relay runs |
 | `ORDERS_OUTBOX_RELAY_BATCH_SIZE` | `50` | Events per relay transaction |

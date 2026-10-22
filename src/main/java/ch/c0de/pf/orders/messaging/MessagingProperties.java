@@ -4,5 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 @ConfigurationProperties("orders.messaging")
-public record MessagingProperties(@DefaultValue("order.created") String orderCreatedQueue) {
+public record MessagingProperties(
+    @DefaultValue("order.created") String orderCreatedQueue,
+    @DefaultValue("DLQ.order.created") String orderCreatedDlq) {
 }

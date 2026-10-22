@@ -20,7 +20,11 @@ public final class OrderTestData {
     }
 
     public static Order persistedOrder(Long id) {
-        Order order = newOrder();
+        return persistedOrder(id, CUSTOMER_ID);
+    }
+
+    public static Order persistedOrder(Long id, String customerId) {
+        Order order = newOrder(customerId);
         ReflectionTestUtils.setField(order, "id", id);
         return order;
     }

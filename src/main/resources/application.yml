@@ -17,6 +17,12 @@ spring:
     broker-url: ${ARTEMIS_URL:tcp://localhost:61616}
     user: ${ARTEMIS_USER:artemis}
     password: ${ARTEMIS_PASSWORD:artemis}
+  jms:
+    listener:
+      session:
+        transacted: true
+      min-concurrency: 2
+      max-concurrency: 5
   data:
     web:
       pageable:
@@ -27,8 +33,15 @@ spring:
 orders:
   clock:
     offset: PT0S
+  worker:
+    enabled: true
+  processing:
+    delay: PT0.5S
+    failing-customer-prefix: FAIL-
+    flaky-customer-prefix: FLAKY-
   messaging:
     order-created-queue: order.created
+    order-created-dlq: DLQ.order.created
   outbox:
     relay:
       enabled: true

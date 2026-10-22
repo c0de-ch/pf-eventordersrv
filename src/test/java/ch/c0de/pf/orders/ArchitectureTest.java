@@ -33,6 +33,10 @@ class ArchitectureTest {
         .should().dependOnClassesThat().resideInAnyPackage(ROOT + ".order..", ROOT + ".outbox..", ROOT + ".messaging..", ROOT + ".config..");
 
     @ArchTest
+    static final ArchRule domainDoesNotDependOnProcessing = noClasses().that().resideInAPackage(ROOT + ".order")
+        .should().dependOnClassesThat().resideInAPackage(ROOT + ".order.processing..");
+
+    @ArchTest
     static final ArchRule outboxKnowsNoDomain = noClasses().that().resideInAPackage(ROOT + ".outbox..")
         .should().dependOnClassesThat().resideInAnyPackage(ROOT + ".order..", ROOT + ".messaging..", ROOT + ".config..");
 

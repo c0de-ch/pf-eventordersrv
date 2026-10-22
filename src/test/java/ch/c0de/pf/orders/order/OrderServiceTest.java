@@ -95,6 +95,68 @@ class OrderServiceTest {
     }
 
     @Test
+    void startsProcessingOfCreatedOrder() {
+        Order order = OrderTestData.persistedOrder(7L);
+        when(orders.findById(7L)).thenReturn(Optional.of(order));
+
+        assertThat(service.startProcessing(7L)).contains(order);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PROCESSING);
+    }
+
+    @Test
+    void resumesOrderAlreadyInProcessing() {
+        Order order = OrderTestData.persistedOrder(7L);
+        order.markProcessing();
+        when(orders.findById(7L)).thenReturn(Optional.of(order));
+
+        assertThat(service.startProcessing(7L)).contains(order);
+        assertThat(order.getHistory()).hasSize(2);
+    }
+
+    @Test
+    void skipsProcessingOfFinalAndUnknownOrders() {
+        Order processed = OrderTestData.persistedOrder(7L);
+        processed.markProcessing();
+        processed.markProcessed();
+        when(orders.findById(7L)).thenReturn(Optional.of(processed));
+        when(orders.findById(8L)).thenReturn(Optional.empty());
+
+        assertThat(service.startProcessing(7L)).isEmpty();
+        assertThat(service.startProcessing(8L)).isEmpty();
+    }
+
+    @Test
+    void completesProcessing() {
+        Order order = OrderTestData.persistedOrder(7L);
+        order.markProcessing();
+        when(orders.findById(7L)).thenReturn(Optional.of(order));
+
+        service.completeProcessing(7L);
+
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PROCESSED);
+    }
+
+    @Test
+    void failsProcessingWithReasonOnlyWhileNotFinal() {
+        Order processing = OrderTestData.persistedOrder(7L);
+        processing.markProcessing();
+        Order processed = OrderTestData.persistedOrder(8L);
+        processed.markProcessing();
+        processed.markProcessed();
+        when(orders.findById(7L)).thenReturn(Optional.of(processing));
+        when(orders.findById(8L)).thenReturn(Optional.of(processed));
+        when(orders.findById(9L)).thenReturn(Optional.empty());
+
+        service.failProcessing(7L, "dead-lettered");
+        service.failProcessing(8L, "dead-lettered");
+        service.failProcessing(9L, "dead-lettered");
+
+        assertThat(processing.getStatus()).isEqualTo(OrderStatus.FAILED);
+        assertThat(processing.getHistory().getLast().getReason()).isEqualTo("dead-lettered");
+        assertThat(processed.getStatus()).isEqualTo(OrderStatus.PROCESSED);
+    }
+
+    @Test
     void getFailsForUnknownOrder() {
         when(orders.findWithHistoryById(42L)).thenReturn(Optional.empty());
 
