@@ -2,7 +2,7 @@ create table orders (
   id          bigint generated always as identity primary key,
   customer_id varchar(64)   not null,
   amount      numeric(19,2) not null check (amount > 0),
-  currency    char(3)       not null default 'CHF',
+  currency    varchar(3)    not null default 'CHF' check (currency ~ '^[A-Z]{3}$'),
   status      varchar(16)   not null check (status in ('CREATED', 'PROCESSING', 'PROCESSED', 'FAILED')),
   version     bigint        not null default 0,
   created_at  timestamptz   not null,

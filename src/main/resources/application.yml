@@ -20,6 +20,10 @@ spring:
   lifecycle:
     timeout-per-shutdown-phase: 20s
 
+orders:
+  clock:
+    offset: PT0S
+
 server:
   port: 8080
   shutdown: graceful
