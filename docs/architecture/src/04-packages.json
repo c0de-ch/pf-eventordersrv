@@ -1,0 +1,110 @@
+{
+  "$schema": "https://raw.githubusercontent.com/himanshu13ps/penciled/main/skills/penciled/schema/architecture.schema.json",
+  "version": "0.1",
+  "type": "architecture",
+  "title": "Packages: dependencies point inward (ArchUnit)",
+  "direction": "TB",
+  "nodes": [
+    {
+      "id": "api",
+      "label": "order.api",
+      "shape": "rounded",
+      "sublabel": "OrderController, ApiExceptionHandler, DTOs"
+    },
+    {
+      "id": "messaging",
+      "label": "messaging",
+      "shape": "rounded",
+      "sublabel": "listeners, JmsOutboxPublisher, JmsConfig"
+    },
+    {
+      "id": "processing",
+      "label": "order.processing",
+      "shape": "rounded",
+      "sublabel": "OrderProcessingService, SimulatedOrderProcessor"
+    },
+    {
+      "id": "order",
+      "label": "order",
+      "shape": "box",
+      "sublabel": "Order, OrderStatus, OrderService, OrderRepository",
+      "shade": "light"
+    },
+    {
+      "id": "outbox",
+      "label": "outbox",
+      "shape": "box",
+      "sublabel": "Outbox, OutboxRelay, OutboxPublisher port"
+    },
+    {
+      "id": "common",
+      "label": "common",
+      "shape": "box",
+      "sublabel": "AuditedEntity, ClockConfig, JpaAuditingConfig",
+      "group": "indep"
+    },
+    {
+      "id": "config",
+      "label": "config",
+      "shape": "box",
+      "sublabel": "OpenApiConfig, OTel log appender, log customizer",
+      "group": "indep"
+    }
+  ],
+  "groups": [
+    {
+      "id": "indep",
+      "label": "no dependency on the domain"
+    }
+  ],
+  "edges": [
+    {
+      "from": "api",
+      "to": "order",
+      "label": "OrderService"
+    },
+    {
+      "from": "processing",
+      "to": "order",
+      "label": "OrderService, Order"
+    },
+    {
+      "from": "messaging",
+      "to": "processing",
+      "label": "OrderProcessingService"
+    },
+    {
+      "from": "messaging",
+      "to": "order",
+      "label": "failProcessing"
+    },
+    {
+      "from": "messaging",
+      "to": "outbox",
+      "label": "implements OutboxPublisher"
+    },
+    {
+      "from": "outbox",
+      "to": "order",
+      "label": "Outbox.append",
+      "arrow": "start"
+    },
+    {
+      "from": "order",
+      "to": "common",
+      "label": "AuditedEntity, Clock"
+    },
+    {
+      "from": "outbox",
+      "to": "common",
+      "label": "AuditedEntity, Clock"
+    }
+  ],
+  "paper": {
+    "style": "clean",
+    "texture": "plain",
+    "pencil": "2B",
+    "eraserMarks": true,
+    "seed": 14
+  }
+}

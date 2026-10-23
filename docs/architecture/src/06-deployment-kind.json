@@ -1,0 +1,163 @@
+{
+  "$schema": "https://raw.githubusercontent.com/himanshu13ps/penciled/main/skills/penciled/schema/architecture.schema.json",
+  "version": "0.1",
+  "type": "architecture",
+  "title": "Kubernetes: make kind-deploy",
+  "direction": "LR",
+  "nodes": [
+    {
+      "id": "dev",
+      "label": "Developer",
+      "shape": "person",
+      "sublabel": "make kind-up kind-deploy"
+    },
+    {
+      "id": "ui",
+      "label": "order-ui",
+      "shape": "rounded",
+      "sublabel": "nginx-unprivileged, API_UPSTREAM",
+      "group": "cui"
+    },
+    {
+      "id": "api",
+      "label": "order-service",
+      "shape": "rounded",
+      "sublabel": "probes, read-only root, non-root",
+      "shade": "light",
+      "group": "csvc"
+    },
+    {
+      "id": "worker",
+      "label": "order-service-worker",
+      "shape": "rounded",
+      "sublabel": "worker.separate=true, optional",
+      "group": "csvc"
+    },
+    {
+      "id": "cm",
+      "label": "ConfigMap",
+      "shape": "document",
+      "sublabel": "DB_URL, ARTEMIS_URL, OTEL endpoint",
+      "group": "csvc"
+    },
+    {
+      "id": "secret",
+      "label": "Secret",
+      "shape": "document",
+      "sublabel": "existingSecret: DB_PASSWORD, ARTEMIS_PASSWORD",
+      "group": "csvc"
+    },
+    {
+      "id": "artemis",
+      "label": "artemis",
+      "shape": "queue",
+      "sublabel": "Deployment, broker.xml ConfigMap",
+      "group": "cinfra"
+    },
+    {
+      "id": "pg",
+      "label": "postgres",
+      "shape": "database",
+      "sublabel": "StatefulSet + PVC",
+      "group": "cinfra"
+    },
+    {
+      "id": "lgtm",
+      "label": "otel-lgtm",
+      "shape": "box",
+      "sublabel": "Grafana, Tempo, Loki, Prometheus",
+      "group": "cinfra"
+    }
+  ],
+  "groups": [
+    {
+      "id": "cluster",
+      "label": "kind: orders"
+    },
+    {
+      "id": "ns",
+      "label": "namespace orders",
+      "parent": "cluster"
+    },
+    {
+      "id": "cui",
+      "label": "chart order-ui",
+      "parent": "ns"
+    },
+    {
+      "id": "csvc",
+      "label": "chart order-service",
+      "parent": "ns"
+    },
+    {
+      "id": "cinfra",
+      "label": "chart dev-infra",
+      "parent": "ns"
+    }
+  ],
+  "edges": [
+    {
+      "from": "dev",
+      "to": "ui",
+      "label": "NodePort 30081"
+    },
+    {
+      "from": "dev",
+      "to": "api",
+      "label": "NodePort 30080"
+    },
+    {
+      "from": "dev",
+      "to": "lgtm",
+      "label": "NodePort 30300",
+      "style": "dashed"
+    },
+    {
+      "from": "ui",
+      "to": "api",
+      "label": "/api to Service :8080"
+    },
+    {
+      "from": "api",
+      "to": "pg",
+      "label": "JDBC"
+    },
+    {
+      "from": "api",
+      "to": "artemis",
+      "label": "JMS"
+    },
+    {
+      "from": "api",
+      "to": "lgtm",
+      "label": "OTLP",
+      "style": "dashed"
+    },
+    {
+      "from": "cm",
+      "to": "api",
+      "label": "env",
+      "arrow": "none"
+    },
+    {
+      "from": "secret",
+      "to": "api",
+      "label": "env",
+      "arrow": "none"
+    },
+    {
+      "from": "api",
+      "to": "worker",
+      "label": "same image, consumers only",
+      "style": "dashed",
+      "arrow": "none"
+    }
+  ],
+  "paper": {
+    "style": "clean",
+    "texture": "plain",
+    "pencil": "2B",
+    "eraserMarks": true,
+    "seed": 16
+  }
+}

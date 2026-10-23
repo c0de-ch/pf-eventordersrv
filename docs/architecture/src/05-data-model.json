@@ -1,0 +1,106 @@
+{
+  "$schema": "https://raw.githubusercontent.com/himanshu13ps/penciled/main/skills/penciled/schema/architecture.schema.json",
+  "version": "0.1",
+  "type": "architecture",
+  "title": "Data model: Flyway V1__init.sql",
+  "direction": "LR",
+  "nodes": [
+    {
+      "id": "orders",
+      "label": "orders",
+      "shape": "database",
+      "sublabel": "customer_id, amount, currency, status, version",
+      "group": "tables"
+    },
+    {
+      "id": "history",
+      "label": "order_status_history",
+      "shape": "database",
+      "sublabel": "order_id, from_status, to_status, reason",
+      "group": "tables"
+    },
+    {
+      "id": "outbox",
+      "label": "outbox_event",
+      "shape": "database",
+      "sublabel": "aggregate_type/id, event_type, payload, trace_context",
+      "shade": "light",
+      "group": "tables"
+    },
+    {
+      "id": "relaycols",
+      "label": "relay columns",
+      "shape": "document",
+      "sublabel": "attempts, last_error, published_at"
+    },
+    {
+      "id": "pendingidx",
+      "label": "outbox_event_pending_idx",
+      "shape": "document",
+      "sublabel": "on (id) where published_at is null"
+    },
+    {
+      "id": "ordersidx",
+      "label": "orders indexes",
+      "shape": "document",
+      "sublabel": "customer_id; (status, created_at)"
+    },
+    {
+      "id": "checks",
+      "label": "check constraints",
+      "shape": "document",
+      "sublabel": "amount > 0; currency ^[A-Z]{3}$; status enum"
+    }
+  ],
+  "groups": [
+    {
+      "id": "tables",
+      "label": "every table: bigint identity id, created_at, updated_at"
+    }
+  ],
+  "edges": [
+    {
+      "from": "history",
+      "to": "orders",
+      "label": "order_id FK"
+    },
+    {
+      "from": "outbox",
+      "to": "orders",
+      "label": "aggregate_id, no FK",
+      "style": "dashed",
+      "arrow": "none"
+    },
+    {
+      "from": "relaycols",
+      "to": "outbox",
+      "style": "dashed",
+      "arrow": "none"
+    },
+    {
+      "from": "pendingidx",
+      "to": "outbox",
+      "style": "dashed",
+      "arrow": "none"
+    },
+    {
+      "from": "ordersidx",
+      "to": "orders",
+      "style": "dashed",
+      "arrow": "none"
+    },
+    {
+      "from": "checks",
+      "to": "orders",
+      "style": "dashed",
+      "arrow": "none"
+    }
+  ],
+  "paper": {
+    "style": "clean",
+    "texture": "plain",
+    "pencil": "2B",
+    "eraserMarks": true,
+    "seed": 15
+  }
+}

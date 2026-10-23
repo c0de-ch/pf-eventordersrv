@@ -1,0 +1,176 @@
+{
+  "$schema": "https://raw.githubusercontent.com/himanshu13ps/penciled/main/skills/penciled/schema/architecture.schema.json",
+  "version": "0.1",
+  "type": "architecture",
+  "title": "Observability: one trace from REST to consumer",
+  "direction": "TB",
+  "nodes": [
+    {
+      "id": "app",
+      "label": "order-service",
+      "shape": "rounded",
+      "sublabel": "Micrometer Observation + OpenTelemetry",
+      "shade": "light"
+    },
+    {
+      "id": "outboxrow",
+      "label": "outbox_event.trace_context",
+      "shape": "database",
+      "sublabel": "traceparent stored, relay restores span"
+    },
+    {
+      "id": "logdoc",
+      "label": "ECS log line",
+      "shape": "document",
+      "sublabel": "trace.id, order.id, event.action, app.time"
+    },
+    {
+      "id": "prom",
+      "label": "/actuator/prometheus",
+      "shape": "box",
+      "sublabel": "always on, scrape alternative"
+    },
+    {
+      "id": "collector",
+      "label": "OTel Collector",
+      "shape": "rounded",
+      "sublabel": "memory_limiter, k8sattributes, batch",
+      "group": "platform"
+    },
+    {
+      "id": "connectors",
+      "label": "spanmetrics + servicegraph",
+      "shape": "box",
+      "sublabel": "traces to RED metrics, service graph",
+      "group": "met"
+    },
+    {
+      "id": "tempo",
+      "label": "Tempo",
+      "shape": "database",
+      "sublabel": "traces",
+      "group": "platform"
+    },
+    {
+      "id": "mimir",
+      "label": "Mimir",
+      "shape": "database",
+      "sublabel": "metrics",
+      "group": "met"
+    },
+    {
+      "id": "loki",
+      "label": "Loki",
+      "shape": "database",
+      "sublabel": "logs",
+      "group": "platform"
+    },
+    {
+      "id": "grafana",
+      "label": "Grafana",
+      "shape": "box",
+      "sublabel": "dashboard Order Service, Explore for the rest",
+      "shade": "light",
+      "group": "platform"
+    },
+    {
+      "id": "lgtm",
+      "label": "otel-lgtm",
+      "shape": "cloud",
+      "sublabel": "local all-in-one on compose and kind"
+    }
+  ],
+  "groups": [
+    {
+      "id": "platform",
+      "label": "platform contract: deploy/otel/collector.yaml"
+    },
+    {
+      "id": "met",
+      "label": "metrics pipeline",
+      "parent": "platform"
+    }
+  ],
+  "edges": [
+    {
+      "from": "app",
+      "to": "outboxrow",
+      "label": "traceparent",
+      "arrow": "both"
+    },
+    {
+      "from": "app",
+      "to": "logdoc",
+      "label": "stdout + OTLP appender",
+      "arrow": "none"
+    },
+    {
+      "from": "app",
+      "to": "collector",
+      "label": "OTLP traces, logs, metrics opt-in"
+    },
+    {
+      "from": "app",
+      "to": "prom",
+      "arrow": "none"
+    },
+    {
+      "from": "prom",
+      "to": "collector",
+      "label": "prometheus receiver",
+      "style": "dashed"
+    },
+    {
+      "from": "app",
+      "to": "lgtm",
+      "label": "OTLP 4318",
+      "style": "dashed"
+    },
+    {
+      "from": "collector",
+      "to": "tempo",
+      "label": "otlp/tempo"
+    },
+    {
+      "from": "collector",
+      "to": "connectors",
+      "label": "traces"
+    },
+    {
+      "from": "connectors",
+      "to": "mimir"
+    },
+    {
+      "from": "collector",
+      "to": "mimir",
+      "label": "remote write"
+    },
+    {
+      "from": "collector",
+      "to": "loki",
+      "label": "otlphttp/loki"
+    },
+    {
+      "from": "tempo",
+      "to": "grafana",
+      "label": "query"
+    },
+    {
+      "from": "mimir",
+      "to": "grafana",
+      "label": "query"
+    },
+    {
+      "from": "loki",
+      "to": "grafana",
+      "label": "query"
+    }
+  ],
+  "paper": {
+    "style": "clean",
+    "texture": "plain",
+    "pencil": "2B",
+    "eraserMarks": true,
+    "seed": 17
+  }
+}

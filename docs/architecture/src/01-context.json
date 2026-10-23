@@ -1,0 +1,143 @@
+{
+  "$schema": "https://raw.githubusercontent.com/himanshu13ps/penciled/main/skills/penciled/schema/architecture.schema.json",
+  "version": "0.1",
+  "type": "architecture",
+  "title": "Order service: system context",
+  "direction": "TB",
+  "nodes": [
+    {
+      "id": "client",
+      "label": "Client / reviewer",
+      "shape": "person",
+      "sublabel": "browser, curl"
+    },
+    {
+      "id": "app",
+      "label": "order-service",
+      "shape": "rounded",
+      "sublabel": "Spring Boot 4.1, Java 25",
+      "shade": "light",
+      "group": "back"
+    },
+    {
+      "id": "ui",
+      "label": "Order UI",
+      "shape": "rounded",
+      "sublabel": "Angular 22 on nginx, /api proxy",
+      "group": "front"
+    },
+    {
+      "id": "db",
+      "label": "PostgreSQL 17",
+      "shape": "database",
+      "sublabel": "orders, order_status_history, outbox_event",
+      "group": "back"
+    },
+    {
+      "id": "mq",
+      "label": "ActiveMQ Artemis",
+      "shape": "queue",
+      "sublabel": "order.accepted, DLQ.order.accepted",
+      "group": "back"
+    },
+    {
+      "id": "lgtm",
+      "label": "Grafana stack",
+      "shape": "box",
+      "sublabel": "otel-lgtm: Tempo, Loki, Prometheus",
+      "group": "back"
+    },
+    {
+      "id": "gha",
+      "label": "GitHub Actions",
+      "shape": "cloud",
+      "sublabel": "ci, kind-e2e, release"
+    },
+    {
+      "id": "ghcr",
+      "label": "GHCR",
+      "shape": "cloud",
+      "sublabel": "images and OCI charts"
+    }
+  ],
+  "groups": [
+    {
+      "id": "rt",
+      "label": "compose / kind"
+    },
+    {
+      "id": "front",
+      "label": "web",
+      "parent": "rt"
+    },
+    {
+      "id": "back",
+      "label": "backend",
+      "parent": "rt"
+    }
+  ],
+  "edges": [
+    {
+      "from": "client",
+      "to": "ui",
+      "label": "UI :8081 / :30081"
+    },
+    {
+      "from": "client",
+      "to": "app",
+      "label": "REST :8080 / :30080"
+    },
+    {
+      "from": "client",
+      "to": "lgtm",
+      "label": "Grafana :3000 / :30300",
+      "style": "dashed"
+    },
+    {
+      "from": "ui",
+      "to": "app",
+      "label": "/api proxy"
+    },
+    {
+      "from": "app",
+      "to": "db",
+      "label": "JDBC"
+    },
+    {
+      "from": "app",
+      "to": "mq",
+      "label": "JMS",
+      "arrow": "both"
+    },
+    {
+      "from": "app",
+      "to": "lgtm",
+      "label": "OTLP",
+      "style": "dashed"
+    },
+    {
+      "from": "gha",
+      "to": "ghcr",
+      "label": "push"
+    },
+    {
+      "from": "ghcr",
+      "to": "app",
+      "label": "image order-service",
+      "style": "dashed"
+    },
+    {
+      "from": "ghcr",
+      "to": "ui",
+      "label": "image order-ui",
+      "style": "dashed"
+    }
+  ],
+  "paper": {
+    "style": "clean",
+    "texture": "plain",
+    "pencil": "2B",
+    "eraserMarks": true,
+    "seed": 11
+  }
+}

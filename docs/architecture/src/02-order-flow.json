@@ -1,0 +1,173 @@
+{
+  "$schema": "https://raw.githubusercontent.com/himanshu13ps/penciled/main/skills/penciled/schema/architecture.schema.json",
+  "version": "0.1",
+  "type": "architecture",
+  "title": "Order flow: REST, outbox, JMS, consumer",
+  "direction": "TB",
+  "nodes": [
+    {
+      "id": "client",
+      "label": "Client",
+      "shape": "person",
+      "sublabel": "POST /orders {customerId, amount}"
+    },
+    {
+      "id": "controller",
+      "label": "OrderController",
+      "shape": "rounded",
+      "sublabel": "201 + Location, problem details",
+      "group": "api"
+    },
+    {
+      "id": "service",
+      "label": "OrderService.create",
+      "shape": "rounded",
+      "sublabel": "one @Transactional",
+      "group": "api"
+    },
+    {
+      "id": "orders",
+      "label": "orders",
+      "shape": "database",
+      "sublabel": "status ACCEPTED, version 0",
+      "group": "tx"
+    },
+    {
+      "id": "history",
+      "label": "order_status_history",
+      "shape": "database",
+      "sublabel": "null to ACCEPTED",
+      "group": "tx"
+    },
+    {
+      "id": "outbox",
+      "label": "outbox_event",
+      "shape": "database",
+      "sublabel": "OrderAccepted JSON + traceparent",
+      "shade": "light",
+      "group": "tx"
+    },
+    {
+      "id": "relay",
+      "label": "OutboxRelay",
+      "shape": "rounded",
+      "sublabel": "@Scheduled 1 s, batch 50",
+      "group": "grelay"
+    },
+    {
+      "id": "queue",
+      "label": "order.accepted",
+      "shape": "queue",
+      "sublabel": "Artemis, JMSCorrelationID = orderId"
+    },
+    {
+      "id": "listener",
+      "label": "OrderAcceptedListener",
+      "shape": "rounded",
+      "sublabel": "@JmsListener, transacted, 2-5 threads",
+      "group": "worker"
+    },
+    {
+      "id": "proc",
+      "label": "OrderProcessingService",
+      "shape": "rounded",
+      "sublabel": "tx1 PROCESSING, work, tx2 PROCESSED",
+      "group": "worker"
+    },
+    {
+      "id": "dlq",
+      "label": "DLQ.order.accepted",
+      "shape": "queue",
+      "sublabel": "after 3 attempts (1 s, 2 s)"
+    },
+    {
+      "id": "dll",
+      "label": "DeadLetterListener",
+      "shape": "rounded",
+      "sublabel": "failProcessing: FAILED + reason",
+      "group": "worker"
+    }
+  ],
+  "groups": [
+    {
+      "id": "api",
+      "label": "API"
+    },
+    {
+      "id": "tx",
+      "label": "one transaction"
+    },
+    {
+      "id": "grelay",
+      "label": "orders.outbox.relay.enabled"
+    },
+    {
+      "id": "worker",
+      "label": "orders.worker.enabled"
+    }
+  ],
+  "edges": [
+    {
+      "from": "client",
+      "to": "controller",
+      "label": "HTTP"
+    },
+    {
+      "from": "controller",
+      "to": "service"
+    },
+    {
+      "from": "service",
+      "to": "orders",
+      "label": "insert"
+    },
+    {
+      "from": "service",
+      "to": "history",
+      "label": "insert"
+    },
+    {
+      "from": "service",
+      "to": "outbox",
+      "label": "append"
+    },
+    {
+      "from": "outbox",
+      "to": "relay",
+      "label": "FOR UPDATE SKIP LOCKED"
+    },
+    {
+      "from": "relay",
+      "to": "queue",
+      "label": "JmsTemplate"
+    },
+    {
+      "from": "queue",
+      "to": "listener",
+      "label": "deliver"
+    },
+    {
+      "from": "listener",
+      "to": "proc",
+      "label": "@Retryable on transient"
+    },
+    {
+      "from": "queue",
+      "to": "dlq",
+      "label": "3 rollbacks",
+      "style": "dashed"
+    },
+    {
+      "from": "dlq",
+      "to": "dll",
+      "label": "deliver"
+    }
+  ],
+  "paper": {
+    "style": "clean",
+    "texture": "plain",
+    "pencil": "2B",
+    "eraserMarks": true,
+    "seed": 12
+  }
+}

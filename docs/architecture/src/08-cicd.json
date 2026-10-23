@@ -1,0 +1,173 @@
+{
+  "$schema": "https://raw.githubusercontent.com/himanshu13ps/penciled/main/skills/penciled/schema/architecture.schema.json",
+  "version": "0.1",
+  "type": "architecture",
+  "title": "CI/CD and GitOps",
+  "direction": "LR",
+  "nodes": [
+    {
+      "id": "dev",
+      "label": "Developer",
+      "shape": "person",
+      "sublabel": "push, pull request, tag"
+    },
+    {
+      "id": "dependabot",
+      "label": "Dependabot",
+      "shape": "box",
+      "sublabel": "Maven, actions, base images"
+    },
+    {
+      "id": "repo",
+      "label": "GitHub",
+      "shape": "cloud",
+      "sublabel": "c0de-ch/pf-eventordersrv"
+    },
+    {
+      "id": "ci",
+      "label": "ci",
+      "shape": "rounded",
+      "sublabel": "verify, ui, charts lint + kubeconform, images",
+      "group": "actions"
+    },
+    {
+      "id": "e2e",
+      "label": "kind-e2e",
+      "shape": "rounded",
+      "sublabel": "kind cluster, 3 charts, helm test, smoke",
+      "group": "actions"
+    },
+    {
+      "id": "release",
+      "label": "release",
+      "shape": "rounded",
+      "sublabel": "tag v*: images :version, charts, release",
+      "group": "actions"
+    },
+    {
+      "id": "reports",
+      "label": "test reports",
+      "shape": "document",
+      "sublabel": "surefire + failsafe artifact"
+    },
+    {
+      "id": "images",
+      "label": "GHCR images",
+      "shape": "database",
+      "sublabel": "order-service, order-ui",
+      "group": "registry"
+    },
+    {
+      "id": "charts",
+      "label": "GHCR charts",
+      "shape": "database",
+      "sublabel": "oci://ghcr.io/c0de-ch/charts",
+      "group": "registry"
+    },
+    {
+      "id": "ghrel",
+      "label": "GitHub release",
+      "shape": "document",
+      "sublabel": "chart packages, generated notes"
+    },
+    {
+      "id": "argocd",
+      "label": "Argo CD",
+      "shape": "rounded",
+      "sublabel": "deploy/argocd/application.yaml, sketch"
+    },
+    {
+      "id": "cluster",
+      "label": "Kubernetes",
+      "shape": "box",
+      "sublabel": "namespace orders, values per environment",
+      "shade": "light"
+    }
+  ],
+  "groups": [
+    {
+      "id": "actions",
+      "label": "GitHub Actions"
+    },
+    {
+      "id": "registry",
+      "label": "GHCR"
+    }
+  ],
+  "edges": [
+    {
+      "from": "dev",
+      "to": "repo",
+      "label": "git push, PR, tag"
+    },
+    {
+      "from": "dependabot",
+      "to": "repo",
+      "label": "update PRs",
+      "style": "dashed"
+    },
+    {
+      "from": "repo",
+      "to": "ci",
+      "label": "push, PR"
+    },
+    {
+      "from": "repo",
+      "to": "e2e",
+      "label": "push, PR"
+    },
+    {
+      "from": "repo",
+      "to": "release",
+      "label": "tag v*"
+    },
+    {
+      "from": "ci",
+      "to": "reports",
+      "style": "dashed"
+    },
+    {
+      "from": "ci",
+      "to": "images",
+      "label": "sha-<commit>, main"
+    },
+    {
+      "from": "release",
+      "to": "images",
+      "label": ":version"
+    },
+    {
+      "from": "release",
+      "to": "charts",
+      "label": "helm push"
+    },
+    {
+      "from": "release",
+      "to": "ghrel"
+    },
+    {
+      "from": "repo",
+      "to": "argocd",
+      "label": "sync charts/order-service",
+      "style": "dashed"
+    },
+    {
+      "from": "argocd",
+      "to": "cluster",
+      "label": "values per environment"
+    },
+    {
+      "from": "images",
+      "to": "cluster",
+      "label": "pull",
+      "style": "dashed"
+    }
+  ],
+  "paper": {
+    "style": "clean",
+    "texture": "plain",
+    "pencil": "2B",
+    "eraserMarks": true,
+    "seed": 18
+  }
+}

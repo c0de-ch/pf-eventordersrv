@@ -1,0 +1,88 @@
+{
+  "$schema": "https://raw.githubusercontent.com/himanshu13ps/penciled/main/skills/penciled/schema/architecture.schema.json",
+  "version": "0.1",
+  "type": "architecture",
+  "title": "Order status model",
+  "direction": "LR",
+  "nodes": [
+    {
+      "id": "accepted",
+      "label": "ACCEPTED",
+      "shape": "box",
+      "sublabel": "POST /orders",
+      "group": "agg"
+    },
+    {
+      "id": "processing",
+      "label": "PROCESSING",
+      "shape": "box",
+      "sublabel": "listener tx1: startProcessing",
+      "group": "agg"
+    },
+    {
+      "id": "processed",
+      "label": "PROCESSED",
+      "shape": "box",
+      "sublabel": "listener tx2: completeProcessing",
+      "shade": "light",
+      "group": "agg"
+    },
+    {
+      "id": "failed",
+      "label": "FAILED",
+      "shape": "box",
+      "sublabel": "DeadLetterListener: failProcessing",
+      "shade": "medium",
+      "group": "agg"
+    },
+    {
+      "id": "idem",
+      "label": "idempotent consumer",
+      "shape": "document",
+      "sublabel": "final: skip, PROCESSING: resume, unknown: ack"
+    }
+  ],
+  "groups": [
+    {
+      "id": "agg",
+      "label": "Order.transition"
+    }
+  ],
+  "edges": [
+    {
+      "from": "accepted",
+      "to": "processing",
+      "label": "markProcessing()"
+    },
+    {
+      "from": "processing",
+      "to": "processed",
+      "label": "markProcessed()"
+    },
+    {
+      "from": "processing",
+      "to": "failed",
+      "label": "markFailed(reason)"
+    },
+    {
+      "from": "accepted",
+      "to": "failed",
+      "label": "dead-lettered before start",
+      "style": "dashed"
+    },
+    {
+      "from": "idem",
+      "to": "failed",
+      "label": "duplicate delivery",
+      "style": "dashed",
+      "arrow": "none"
+    }
+  ],
+  "paper": {
+    "style": "clean",
+    "texture": "plain",
+    "pencil": "2B",
+    "eraserMarks": true,
+    "seed": 13
+  }
+}
