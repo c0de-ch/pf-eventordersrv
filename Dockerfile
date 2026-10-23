@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM eclipse-temurin:25.0.4.1_1-jdk-alpine AS build
+FROM eclipse-temurin:26.0.2_10-jdk-alpine AS build
 WORKDIR /workspace
 COPY mvnw pom.xml ./
 COPY .mvn .mvn
@@ -8,7 +8,7 @@ COPY src src
 RUN --mount=type=cache,target=/root/.m2 ./mvnw -q -B -DskipTests package \
  && java -Djarmode=tools -jar target/order-service-*.jar extract --layers --destination target/extracted --application-filename app.jar
 
-FROM eclipse-temurin:25.0.4.1_1-jre-alpine
+FROM eclipse-temurin:26.0.2_10-jre-alpine
 LABEL org.opencontainers.image.source="https://github.com/c0de-ch/pf-eventordersrv"
 RUN addgroup -S app && adduser -S -G app -u 10001 app
 WORKDIR /app
