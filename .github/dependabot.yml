@@ -4,6 +4,13 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # the wrapper stays on Maven 3.9.x: 3.10 breaks the IntelliJ import
+      - dependency-name: org.apache.maven:apache-maven
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+      # must match the OpenTelemetry API version that Spring Boot manages
+      - dependency-name: io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -12,3 +19,14 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # Java 25 LTS; feature releases such as 26 are not followed
+      - dependency-name: eclipse-temurin
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: npm
+    directory: /ui
+    schedule:
+      interval: weekly
+    groups:
+      ui:
+        patterns: ["*"]
