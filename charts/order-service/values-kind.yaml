@@ -1,0 +1,22 @@
+# Local kind cluster "orders": image loaded with `kind load`, dev-infra chart in the same namespace
+image:
+  repository: order-service
+  tag: local
+  pullPolicy: Never
+service:
+  type: NodePort
+  nodePort: 30080
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    memory: 768Mi
+config:
+  otel:
+    endpoint: http://dev-infra-otel-lgtm:4318
+    environment: kind
+    samplingProbability: "1.0"
+secrets:
+  dbPassword: orders
+  artemisPassword: artemis

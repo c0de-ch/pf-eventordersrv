@@ -1,0 +1,9 @@
+apiVersion: v2
+name: order-service
+description: Event-driven order service (REST, PostgreSQL, JMS). Production-grade deployment; infrastructure comes from the platform or from the dev-infra chart.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords: [orders, spring-boot, jms, outbox]
+sources:
+  - https://github.com/c0de-ch/pf-eventordersrv

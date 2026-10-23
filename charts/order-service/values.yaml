@@ -1,0 +1,119 @@
+# Default values for order-service. Every key is documented; override per environment with -f.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/c0de-ch/pf-eventordersrv/order-service
+  tag: ""            # defaults to the chart appVersion
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+podAnnotations: {}
+podLabels: {}
+
+# The image runs as uid 10001 (group 101); the filesystem is read-only except /tmp
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 101
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+
+service:
+  type: ClusterIP
+  port: 8080
+  nodePort: null     # set together with type NodePort (kind)
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts: []          # - host: orders.example.com
+  tls: []
+
+# No CPU limit on purpose: throttling a JVM hurts more than sharing spare cycles; memory is limited
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    memory: 768Mi
+
+probes:
+  startup:
+    path: /actuator/health/liveness
+    periodSeconds: 2
+    failureThreshold: 45
+  liveness:
+    path: /actuator/health/liveness
+    periodSeconds: 10
+  readiness:
+    path: /actuator/health/readiness
+    periodSeconds: 5
+
+# Lets in-flight requests finish while the endpoint change propagates
+preStopSleepSeconds: 5
+terminationGracePeriodSeconds: 30
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+# Prometheus Operator ServiceMonitor; alternatively the collector scrapes /actuator/prometheus
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  labels: {}
+
+# worker.separate=true runs API pods (no consumers, relay on) and worker pods (consumers on, relay off)
+worker:
+  separate: false
+  replicaCount: 1
+
+config:
+  springProfiles: k8s
+  database:
+    url: jdbc:postgresql://dev-infra-postgres:5432/orders
+    user: orders
+  artemis:
+    url: tcp://dev-infra-artemis:61616
+    user: artemis
+  otel:
+    endpoint: ""                 # e.g. http://otel-collector.observability:4318; empty disables export
+    environment: ""              # deployment.environment.name; defaults to the namespace
+    resourceAttributes: ""       # extra OTEL_RESOURCE_ATTRIBUTES, e.g. "team=orders,cost.center=4711"
+    samplingProbability: "0.1"
+  processingDelay: PT0.5S
+  clockOffset: PT0S
+  extra: {}                      # additional environment variables, e.g. ORDERS_PROCESSING_FAILING_CUSTOMER_PREFIX: "FAIL-"
+
+# Secret keys DB_PASSWORD and ARTEMIS_PASSWORD. Prefer existingSecret (sealed/external secret);
+# the inline values create a Secret and are meant for kind/dev only.
+secrets:
+  existingSecret: ""
+  dbPassword: ""
+  artemisPassword: ""
+
+extraEnv: []
+nodeSelector: {}
+tolerations: []
+affinity: {}

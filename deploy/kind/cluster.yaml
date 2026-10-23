@@ -1,0 +1,13 @@
+# Local cluster "orders": NodePorts are mapped 1:1 to the host (30080 API, 30081 UI, 30300 Grafana)
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: orders
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30080
+        hostPort: 30080
+      - containerPort: 30081
+        hostPort: 30081
+      - containerPort: 30300
+        hostPort: 30300

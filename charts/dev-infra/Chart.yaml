@@ -1,0 +1,8 @@
+apiVersion: v2
+name: dev-infra
+description: Development and test infrastructure for order-service - PostgreSQL, ActiveMQ Artemis and grafana/otel-lgtm. Not for production.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+sources:
+  - https://github.com/c0de-ch/pf-eventordersrv

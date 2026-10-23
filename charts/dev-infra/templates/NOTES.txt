@@ -1,0 +1,6 @@
+dev-infra {{ .Chart.Version }} in namespace {{ .Release.Namespace }} (development and test only).
+
+PostgreSQL: {{ .Release.Name }}-postgres:5432 (db {{ .Values.postgres.database }}, user {{ .Values.postgres.user }})
+Artemis:    {{ .Release.Name }}-artemis:61616, console port 8161
+OTLP:       http://{{ .Release.Name }}-otel-lgtm:4318
+Grafana:    http://localhost:{{ .Values.otelLgtm.grafanaNodePort }} (NodePort, admin/admin)

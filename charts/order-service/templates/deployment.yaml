@@ -1,0 +1,1 @@
+{{- include "order-service.deployment" (dict "root" . "name" (include "order-service.fullname" .) "component" "api" "replicas" .Values.replicaCount "workerEnabled" (not .Values.worker.separate) "relayEnabled" true) }}

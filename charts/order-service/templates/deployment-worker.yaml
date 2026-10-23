@@ -1,0 +1,3 @@
+{{- if .Values.worker.separate }}
+{{- include "order-service.deployment" (dict "root" . "name" (printf "%s-worker" (include "order-service.fullname" .)) "component" "worker" "replicas" .Values.worker.replicaCount "workerEnabled" true "relayEnabled" false) }}
+{{- end }}

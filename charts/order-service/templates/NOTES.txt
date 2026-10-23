@@ -1,0 +1,15 @@
+{{ .Chart.Name }} {{ .Chart.Version }} released as {{ .Release.Name }} in namespace {{ .Release.Namespace }}.
+
+{{- if and (eq .Values.service.type "NodePort") .Values.service.nodePort }}
+API:      http://localhost:{{ .Values.service.nodePort }}/swagger-ui.html (NodePort)
+{{- else }}
+API:      kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "order-service.fullname" . }} 8080:{{ .Values.service.port }}
+          then http://localhost:8080/swagger-ui.html
+{{- end }}
+Health:   /actuator/health/readiness (database only; the broker is buffered by the outbox)
+Metrics:  /actuator/prometheus
+Verify:   helm test {{ .Release.Name }} --namespace {{ .Release.Namespace }}
+Logs:     kubectl --namespace {{ .Release.Namespace }} logs deploy/{{ include "order-service.fullname" . }} -f
+{{- if .Values.worker.separate }}
+Workers:  deploy/{{ include "order-service.fullname" . }}-worker ({{ .Values.worker.replicaCount }} replicas, consumers only)
+{{- end }}

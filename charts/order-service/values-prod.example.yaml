@@ -1,0 +1,37 @@
+# Example for a standard cluster: managed database and broker, platform collector, external secret
+replicaCount: 2
+image:
+  tag: "1.0.0"
+worker:
+  separate: true
+  replicaCount: 2
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+serviceMonitor:
+  enabled: true
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: orders.example.internal
+  tls:
+    - secretName: orders-tls
+      hosts: [orders.example.internal]
+config:
+  database:
+    url: jdbc:postgresql://orders-db.example.internal:5432/orders
+    user: orders_app
+  artemis:
+    url: tcp://artemis.messaging.svc:61616
+    user: orders
+  otel:
+    endpoint: http://otel-collector.observability.svc:4318
+    environment: prod
+    samplingProbability: "0.1"
+secrets:
+  existingSecret: order-service-credentials   # keys DB_PASSWORD, ARTEMIS_PASSWORD

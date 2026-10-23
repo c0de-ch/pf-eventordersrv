@@ -1,0 +1,40 @@
+# Dev/test only: single replicas, inline passwords, no backups. Production uses managed services.
+
+postgres:
+  enabled: true
+  image: postgres:17.11-alpine
+  database: orders
+  user: orders
+  password: orders
+  storage: 1Gi
+  storageClassName: ""   # empty = cluster default
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+
+artemis:
+  enabled: true
+  image: apache/artemis:2.57.0-alpine
+  user: artemis
+  password: artemis
+  # files/broker.xml is a copy of deploy/artemis/broker.xml (checked by `make lint`)
+  resources:
+    requests:
+      cpu: 250m
+      memory: 768Mi
+    limits:
+      memory: 1536Mi
+
+otelLgtm:
+  enabled: true
+  image: grafana/otel-lgtm:0.37.0
+  grafanaNodePort: 30300
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      memory: 2Gi

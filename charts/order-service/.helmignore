@@ -1,0 +1,5 @@
+.DS_Store
+*.swp
+*.tmp
+values-kind.yaml
+values-prod.example.yaml
