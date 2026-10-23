@@ -17,8 +17,14 @@ verify: ## Unit and integration tests (needs Docker)
 run: ## Run locally; Postgres and Artemis start from compose.yaml
 	./mvnw spring-boot:run
 
-up: ## Start the full stack with Docker Compose
+image: ## Build the application image (order-service:local)
+	docker build -t order-service:local .
+
+up: ## Build the image and start the full stack with Docker Compose
 	$(COMPOSE) up -d --build --wait
+
+smoke: ## End-to-end smoke test against the running stack (BASE_URL overrides the target)
+	scripts/smoke-test.sh $(BASE_URL)
 
 down: ## Stop the stack
 	$(COMPOSE) down
@@ -29,4 +35,4 @@ logs: ## Follow application logs
 clean: ## Remove build output
 	$(MVN) clean
 
-.PHONY: help build test verify run up down logs clean
+.PHONY: help build test verify run image up smoke down logs clean

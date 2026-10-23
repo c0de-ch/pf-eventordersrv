@@ -6,11 +6,15 @@ Event-driven order service: `POST /orders` stores an order, publishes an `order.
 
 | How | Command |
 |-----|---------|
-| Full stack | `make up`, then http://localhost:8080 |
-| Dev loop | `./mvnw spring-boot:run` (Postgres and Artemis start from `compose.yaml`) |
+| Full stack in containers | `make up` builds the image and starts Postgres, Artemis, the Grafana stack and the app; `make smoke` runs the end-to-end check; `make down` stops everything |
+| Dev loop | `./mvnw spring-boot:run` (Postgres, Artemis and the Grafana stack start from `compose.yaml`) |
 | Tests | `./mvnw verify` (Testcontainers, needs Docker) |
 
-Requires JDK 25 and Docker; `java -version` must show 25 for `java -jar` (the Maven build enforces it, a plain `java` call does not). `make help` lists all targets. Host ports: `POSTGRES_PORT` (5432), `ARTEMIS_PORT` (61616), `ARTEMIS_CONSOLE_PORT` (8161).
+`make up` only needs Docker. The Maven path requires JDK 25; `java -version` must show 25 for `java -jar` (the Maven build enforces it, a plain `java` call does not). `make help` lists all targets.
+
+## Container
+
+Multi-stage `Dockerfile`: Maven build on Temurin 25 JDK (Alpine, dependency cache mount), then the layered jar extracted onto a Temurin 25 JRE image in the order dependencies, loader, snapshots, application, so a code change rebuilds only the last layer. The process runs as UID 10001 and reads its memory limit from the container (`MaxRAMPercentage=75`). `.dockerignore` is a whitelist: only `pom.xml`, `mvnw`, `.mvn/` and `src/` reach the build. `scripts/smoke-test.sh` checks readiness, the processed and the failed path, problem details, metrics and the OpenAPI document against any base URL. Host ports: `POSTGRES_PORT` (5432), `ARTEMIS_PORT` (61616), `ARTEMIS_CONSOLE_PORT` (8161).
 
 ## API
 
@@ -73,7 +77,7 @@ Java 25 · Spring Boot 4.1 · Spring Web MVC · Spring Data JPA · Flyway · Pos
 | `DB_USER`, `DB_PASSWORD` | `orders`, `orders` | Database credentials |
 | `ARTEMIS_URL` | `tcp://localhost:61616` | Broker URL |
 | `ARTEMIS_USER`, `ARTEMIS_PASSWORD` | `artemis`, `artemis` | Broker credentials |
-| `SERVER_PORT` | `8080` | HTTP port |
+| `SERVER_PORT` | `8080` | HTTP port (`APP_PORT` maps it on the compose host) |
 | `ORDERS_MESSAGING_ORDER_ACCEPTED_QUEUE` | `order.accepted` | Queue for `OrderAccepted` events |
 | `ORDERS_MESSAGING_ORDER_ACCEPTED_DLQ` | `DLQ.order.accepted` | Dead-letter queue of `order.accepted` |
 | `ORDERS_WORKER_ENABLED` | `true` | Run the consumers in this instance |

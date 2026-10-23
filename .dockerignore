@@ -1,0 +1,6 @@
+# Whitelist: only what the Maven build needs enters the build context
+*
+!pom.xml
+!mvnw
+!.mvn/
+!src/
