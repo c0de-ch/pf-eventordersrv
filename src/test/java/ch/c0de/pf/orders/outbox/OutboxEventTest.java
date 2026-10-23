@@ -9,16 +9,17 @@ class OutboxEventTest {
 
     @Test
     void startsPendingWithoutAttempts() {
-        OutboxEvent event = OutboxEvent.of("Order", 1L, "OrderCreated", "{}");
+        OutboxEvent event = OutboxEvent.of("Order", 1L, "OrderAccepted", "{}", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01");
 
         assertThat(event.isPublished()).isFalse();
         assertThat(event.getAttempts()).isZero();
         assertThat(event.getLastError()).isNull();
+        assertThat(event.getTraceContext()).startsWith("00-0af7651916cd43dd8448eb211c80319c");
     }
 
     @Test
     void publishingRecordsTimeAndClearsLastError() {
-        OutboxEvent event = OutboxEvent.of("Order", 1L, "OrderCreated", "{}");
+        OutboxEvent event = OutboxEvent.of("Order", 1L, "OrderAccepted", "{}", null);
         event.markFailed("broker down");
         Instant now = Instant.parse("2026-10-22T10:00:00Z");
 
@@ -32,7 +33,7 @@ class OutboxEventTest {
 
     @Test
     void failureCountsAttemptAndTruncatesError() {
-        OutboxEvent event = OutboxEvent.of("Order", 1L, "OrderCreated", "{}");
+        OutboxEvent event = OutboxEvent.of("Order", 1L, "OrderAccepted", "{}", null);
 
         event.markFailed("x".repeat(1500));
 

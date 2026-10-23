@@ -9,14 +9,14 @@ import org.junit.jupiter.params.provider.CsvSource;
 class OrderStatusTest {
 
     @ParameterizedTest
-    @CsvSource({"CREATED,PROCESSING", "CREATED,FAILED", "PROCESSING,PROCESSED", "PROCESSING,FAILED"})
+    @CsvSource({"ACCEPTED,PROCESSING", "ACCEPTED,FAILED", "PROCESSING,PROCESSED", "PROCESSING,FAILED"})
     void allowsForwardTransitions(OrderStatus from, OrderStatus to) {
         assertThat(from.canTransitionTo(to)).isTrue();
     }
 
     @ParameterizedTest
-    @CsvSource({"CREATED,PROCESSED", "CREATED,CREATED", "PROCESSING,CREATED", "PROCESSED,PROCESSING",
-        "PROCESSED,FAILED", "FAILED,PROCESSING", "FAILED,PROCESSED", "FAILED,CREATED"})
+    @CsvSource({"ACCEPTED,PROCESSED", "ACCEPTED,ACCEPTED", "PROCESSING,ACCEPTED", "PROCESSED,PROCESSING",
+        "PROCESSED,FAILED", "FAILED,PROCESSING", "FAILED,PROCESSED", "FAILED,ACCEPTED"})
     void rejectsEveryOtherTransition(OrderStatus from, OrderStatus to) {
         assertThat(from.canTransitionTo(to)).isFalse();
     }
@@ -25,7 +25,7 @@ class OrderStatusTest {
     void onlyProcessedAndFailedAreFinal() {
         assertThat(OrderStatus.PROCESSED.isFinal()).isTrue();
         assertThat(OrderStatus.FAILED.isFinal()).isTrue();
-        assertThat(OrderStatus.CREATED.isFinal()).isFalse();
+        assertThat(OrderStatus.ACCEPTED.isFinal()).isFalse();
         assertThat(OrderStatus.PROCESSING.isFinal()).isFalse();
     }
 }

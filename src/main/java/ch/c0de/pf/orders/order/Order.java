@@ -56,8 +56,8 @@ public class Order extends AuditedEntity {
         this.customerId = customerId;
         this.amount = amount;
         this.currency = currency;
-        this.status = OrderStatus.CREATED;
-        this.history.add(new OrderStatusHistory(this, null, OrderStatus.CREATED, null));
+        this.status = OrderStatus.ACCEPTED;
+        this.history.add(new OrderStatusHistory(this, null, OrderStatus.ACCEPTED, null));
     }
 
     public static Order create(String customerId, BigDecimal amount, String currency) {

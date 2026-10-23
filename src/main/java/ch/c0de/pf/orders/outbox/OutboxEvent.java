@@ -34,6 +34,9 @@ public class OutboxEvent extends AuditedEntity {
     @Column(nullable = false, updatable = false)
     private String payload;
 
+    @Column(name = "trace_context", length = 128, updatable = false)
+    private String traceContext;
+
     @Column(nullable = false)
     private int attempts;
 
@@ -46,15 +49,16 @@ public class OutboxEvent extends AuditedEntity {
     protected OutboxEvent() {
     }
 
-    private OutboxEvent(String aggregateType, Long aggregateId, String eventType, String payload) {
+    private OutboxEvent(String aggregateType, Long aggregateId, String eventType, String payload, String traceContext) {
         this.aggregateType = aggregateType;
         this.aggregateId = aggregateId;
         this.eventType = eventType;
         this.payload = payload;
+        this.traceContext = traceContext;
     }
 
-    public static OutboxEvent of(String aggregateType, Long aggregateId, String eventType, String payload) {
-        return new OutboxEvent(aggregateType, aggregateId, eventType, payload);
+    public static OutboxEvent of(String aggregateType, Long aggregateId, String eventType, String payload, String traceContext) {
+        return new OutboxEvent(aggregateType, aggregateId, eventType, payload, traceContext);
     }
 
     public void markPublished(Instant publishedAt) {
@@ -90,6 +94,10 @@ public class OutboxEvent extends AuditedEntity {
 
     public String getPayload() {
         return payload;
+    }
+
+    public String getTraceContext() {
+        return traceContext;
     }
 
     public int getAttempts() {

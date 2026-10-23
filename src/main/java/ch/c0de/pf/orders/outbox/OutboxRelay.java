@@ -21,14 +21,18 @@ public class OutboxRelay {
     private final TransactionTemplate transaction;
     private final Clock clock;
     private final int batchSize;
+    private final OutboxMetrics metrics;
+    private final OutboxTracing tracing;
 
     public OutboxRelay(OutboxRepository outbox, OutboxPublisher publisher, PlatformTransactionManager transactionManager,
-                       Clock clock, OutboxRelayProperties properties) {
+                       Clock clock, OutboxRelayProperties properties, OutboxMetrics metrics, OutboxTracing tracing) {
         this.outbox = outbox;
         this.publisher = publisher;
         this.transaction = new TransactionTemplate(transactionManager);
         this.clock = clock;
         this.batchSize = properties.batchSize();
+        this.metrics = metrics;
+        this.tracing = tracing;
     }
 
     @Scheduled(fixedDelayString = "${orders.outbox.relay.poll-interval:PT1S}")
@@ -59,14 +63,20 @@ public class OutboxRelay {
 
     private boolean publish(OutboxEvent event) {
         try {
-            publisher.publish(event);
-            event.markPublished(clock.instant());
-            log.info("order event published eventId={} eventType={} aggregateId={}",
-                event.getId(), event.getEventType(), event.getAggregateId());
+            tracing.publishWithinTrace(event, () -> {
+                publisher.publish(event);
+                event.markPublished(clock.instant());
+                log.atInfo().addKeyValue("event.action", "order.event.published").addKeyValue("event.id", event.getId())
+                    .addKeyValue("order.id", event.getAggregateId()).addKeyValue("event.type", event.getEventType())
+                    .log("order event published");
+            });
             return true;
         } catch (RuntimeException e) {
             event.markFailed(e.toString());
-            log.warn("order event publish failed eventId={} attempts={} error={}", event.getId(), event.getAttempts(), e.toString());
+            metrics.publishFailed();
+            log.atWarn().addKeyValue("event.action", "order.event.publish_failed").addKeyValue("event.id", event.getId())
+                .addKeyValue("order.id", event.getAggregateId()).addKeyValue("attempts", event.getAttempts())
+                .addKeyValue("error", e.toString()).log("order event publish failed");
             return false;
         }
     }

@@ -8,6 +8,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.tracing.Tracer;
+import io.micrometer.tracing.propagation.Propagator;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -40,7 +43,8 @@ class OutboxRelayTest {
     @BeforeEach
     void setUp() {
         relay = new OutboxRelay(repository, publisher, new NoOpTransactionManager(), Clock.fixed(NOW, ZoneOffset.UTC),
-            new OutboxRelayProperties(true, Duration.ofSeconds(1), 2));
+            new OutboxRelayProperties(true, Duration.ofSeconds(1), 2), new OutboxMetrics(new SimpleMeterRegistry(), repository),
+            new OutboxTracing(Tracer.NOOP, Propagator.NOOP));
     }
 
     @Test
@@ -94,7 +98,7 @@ class OutboxRelayTest {
     }
 
     private static OutboxEvent pending() {
-        return OutboxEvent.of("Order", 1L, "OrderCreated", "{}");
+        return OutboxEvent.of("Order", 1L, "OrderAccepted", "{}", null);
     }
 
     static final class NoOpTransactionManager implements PlatformTransactionManager {

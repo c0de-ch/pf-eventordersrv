@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ch.c0de.pf.orders.outbox.Outbox;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
@@ -41,7 +42,8 @@ class OrderServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new OrderService(orders, outbox, Clock.fixed(NOW, ZoneOffset.UTC));
+        Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
+        service = new OrderService(orders, outbox, clock, new OrderMetrics(new SimpleMeterRegistry(), clock));
     }
 
     @Test
@@ -50,19 +52,19 @@ class OrderServiceTest {
 
         Order order = service.create(new CreateOrder("12345", new BigDecimal("99.99"), null));
 
-        assertThat(order.getStatus()).isEqualTo(OrderStatus.CREATED);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.ACCEPTED);
         assertThat(order.getCurrency()).isEqualTo("CHF");
         verify(orders).save(order);
     }
 
     @Test
-    void appendsOrderCreatedEventToTheOutbox() {
+    void appendsOrderAcceptedEventToTheOutbox() {
         when(orders.save(any(Order.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         service.create(new CreateOrder("12345", new BigDecimal("99.99"), "CHF"));
 
-        ArgumentCaptor<OrderCreatedEvent> event = ArgumentCaptor.forClass(OrderCreatedEvent.class);
-        verify(outbox).append(eq("Order"), any(), eq("OrderCreated"), event.capture());
+        ArgumentCaptor<OrderAcceptedEvent> event = ArgumentCaptor.forClass(OrderAcceptedEvent.class);
+        verify(outbox).append(eq("Order"), any(), eq("OrderAccepted"), event.capture());
         assertThat(event.getValue().customerId()).isEqualTo("12345");
         assertThat(event.getValue().amount()).isEqualByComparingTo("99.99");
         assertThat(event.getValue().occurredAt()).isEqualTo(NOW);
@@ -91,7 +93,7 @@ class OrderServiceTest {
         Page<Order> page = new PageImpl<>(List.of(OrderTestData.newOrder()));
         when(orders.findAll(any(Specification.class), eq(pageable))).thenReturn(page);
 
-        assertThat(service.find(new OrderFilter("12345", OrderStatus.CREATED), pageable)).isSameAs(page);
+        assertThat(service.find(new OrderFilter("12345", OrderStatus.ACCEPTED), pageable)).isSameAs(page);
     }
 
     @Test

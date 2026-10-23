@@ -69,8 +69,8 @@
             <auto-create-queues>true</auto-create-queues>
             <auto-create-addresses>true</auto-create-addresses>
          </address-setting>
-         <address-setting match="order.created">
-            <dead-letter-address>DLQ.order.created</dead-letter-address>
+         <address-setting match="order.accepted">
+            <dead-letter-address>DLQ.order.accepted</dead-letter-address>
             <expiry-address>ExpiryQueue</expiry-address>
             <redelivery-delay>1000</redelivery-delay>
             <redelivery-delay-multiplier>2.0</redelivery-delay-multiplier>
@@ -109,14 +109,14 @@
                <queue name="ExpiryQueue" />
             </anycast>
          </address>
-         <address name="order.created">
+         <address name="order.accepted">
             <anycast>
-               <queue name="order.created"/>
+               <queue name="order.accepted"/>
             </anycast>
          </address>
-         <address name="DLQ.order.created">
+         <address name="DLQ.order.accepted">
             <anycast>
-               <queue name="DLQ.order.created"/>
+               <queue name="DLQ.order.accepted"/>
             </anycast>
          </address>
       </addresses>

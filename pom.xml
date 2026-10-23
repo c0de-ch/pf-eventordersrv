@@ -18,9 +18,10 @@
   <properties>
     <java.version>25</java.version>
     <springdoc.version>3.1.1</springdoc.version>
+    <otel-logback-appender.version>2.28.0-alpha</otel-logback-appender.version>
     <archunit.version>1.5.1</archunit.version>
-    <!-- JDK 24+ warnings: Mockito agent attach in tests, native access by Netty/JNA -->
-    <test.jvm.args>-XX:+EnableDynamicAgentLoading --enable-native-access=ALL-UNNAMED</test.jvm.args>
+    <!-- JDK 24+ warnings: Mockito agent attach in tests, native access by Netty/JNA, Unsafe use by protobuf -->
+    <test.jvm.args>-XX:+EnableDynamicAgentLoading --enable-native-access=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow</test.jvm.args>
   </properties>
 
   <dependencies>
@@ -63,6 +64,20 @@
       <scope>runtime</scope>
     </dependency>
     <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-otlp</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-opentelemetry</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.opentelemetry.instrumentation</groupId>
+      <artifactId>opentelemetry-logback-appender-1.0</artifactId>
+      <version>${otel-logback-appender.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.springdoc</groupId>
       <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
       <version>${springdoc.version}</version>
@@ -102,6 +117,11 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-actuator-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-opentelemetry-test</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -210,7 +230,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
         <configuration>
-          <jvmArguments>--enable-native-access=ALL-UNNAMED</jvmArguments>
+          <jvmArguments>--enable-native-access=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow</jvmArguments>
         </configuration>
       </plugin>
     </plugins>

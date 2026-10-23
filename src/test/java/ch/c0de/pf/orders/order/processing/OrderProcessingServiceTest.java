@@ -12,11 +12,12 @@ import static org.mockito.Mockito.when;
 import ch.c0de.pf.orders.order.Order;
 import ch.c0de.pf.orders.order.OrderService;
 import ch.c0de.pf.orders.order.OrderTestData;
+import io.micrometer.observation.ObservationRegistry;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -29,8 +30,12 @@ class OrderProcessingServiceTest {
     @Mock
     OrderProcessor processor;
 
-    @InjectMocks
     OrderProcessingService service;
+
+    @BeforeEach
+    void setUp() {
+        service = new OrderProcessingService(orders, processor, ObservationRegistry.create());
+    }
 
     @Test
     void processesOrderBetweenTwoTransitions() {

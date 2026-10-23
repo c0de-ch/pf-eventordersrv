@@ -81,7 +81,7 @@ class OutboxRepositoryIT {
     }
 
     private static OutboxEvent pending(long aggregateId) {
-        return OutboxEvent.of("Order", aggregateId, "OrderCreated", "{\"orderId\": " + aggregateId + "}");
+        return OutboxEvent.of("Order", aggregateId, "OrderAccepted", "{\"orderId\": " + aggregateId + "}", null);
     }
 
     private static List<Long> ids(List<OutboxEvent> events) {

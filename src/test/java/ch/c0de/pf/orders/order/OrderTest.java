@@ -1,6 +1,6 @@
 package ch.c0de.pf.orders.order;
 
-import static ch.c0de.pf.orders.order.OrderStatus.CREATED;
+import static ch.c0de.pf.orders.order.OrderStatus.ACCEPTED;
 import static ch.c0de.pf.orders.order.OrderStatus.FAILED;
 import static ch.c0de.pf.orders.order.OrderStatus.PROCESSED;
 import static ch.c0de.pf.orders.order.OrderStatus.PROCESSING;
@@ -14,14 +14,14 @@ import org.junit.jupiter.api.Test;
 class OrderTest {
 
     @Test
-    void createsOrderInStatusCreatedWithFirstHistoryEntry() {
+    void createsOrderInStatusAcceptedWithFirstHistoryEntry() {
         Order order = Order.create("12345", new BigDecimal("99.9"), "CHF");
 
-        assertThat(order.getStatus()).isEqualTo(CREATED);
+        assertThat(order.getStatus()).isEqualTo(ACCEPTED);
         assertThat(order.getAmount()).isEqualTo(new BigDecimal("99.90"));
         assertThat(order.getHistory()).singleElement().satisfies(entry -> {
             assertThat(entry.getFromStatus()).isNull();
-            assertThat(entry.getToStatus()).isEqualTo(CREATED);
+            assertThat(entry.getToStatus()).isEqualTo(ACCEPTED);
             assertThat(entry.getReason()).isNull();
         });
     }
@@ -34,8 +34,8 @@ class OrderTest {
         order.markProcessed();
 
         assertThat(order.getStatus()).isEqualTo(PROCESSED);
-        assertThat(order.getHistory()).extracting(OrderStatusHistory::getFromStatus).containsExactly(null, CREATED, PROCESSING);
-        assertThat(order.getHistory()).extracting(OrderStatusHistory::getToStatus).containsExactly(CREATED, PROCESSING, PROCESSED);
+        assertThat(order.getHistory()).extracting(OrderStatusHistory::getFromStatus).containsExactly(null, ACCEPTED, PROCESSING);
+        assertThat(order.getHistory()).extracting(OrderStatusHistory::getToStatus).containsExactly(ACCEPTED, PROCESSING, PROCESSED);
     }
 
     @Test
@@ -64,8 +64,8 @@ class OrderTest {
 
         assertThatThrownBy(order::markProcessed)
             .isInstanceOf(IllegalStatusTransitionException.class)
-            .hasMessageContaining("CREATED -> PROCESSED");
-        assertThat(order.getStatus()).isEqualTo(CREATED);
+            .hasMessageContaining("ACCEPTED -> PROCESSED");
+        assertThat(order.getStatus()).isEqualTo(ACCEPTED);
         assertThat(order.getHistory()).hasSize(1);
     }
 

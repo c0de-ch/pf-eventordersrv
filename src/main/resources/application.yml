@@ -40,8 +40,8 @@ orders:
     failing-customer-prefix: FAIL-
     flaky-customer-prefix: FLAKY-
   messaging:
-    order-created-queue: order.created
-    order-created-dlq: DLQ.order.created
+    order-accepted-queue: order.accepted
+    order-accepted-dlq: DLQ.order.accepted
   outbox:
     relay:
       enabled: true
@@ -62,3 +62,46 @@ management:
       probes:
         enabled: true
       show-details: always
+      group:
+        # a broker outage must not take the API out of service: the outbox buffers events
+        readiness:
+          include: readinessState,db
+  tracing:
+    sampling:
+      probability: 1.0
+  opentelemetry:
+    resource-attributes:
+      "[service.namespace]": orders
+      "[deployment.environment.name]": ${DEPLOYMENT_ENVIRONMENT:local}
+  observations:
+    enable:
+      # a relay poll every second must not produce a trace per poll
+      "[tasks.scheduled.execution]": false
+  otlp:
+    metrics:
+      export:
+        step: 15s
+        # same unit as the Prometheus endpoint, so dashboards use one name (order_processing_seconds)
+        base-time-unit: seconds
+
+logging:
+  structured:
+    json:
+      customizer: ch.c0de.pf.orders.config.BusinessTimeLogCustomizer
+      # Micrometer puts traceId/spanId into MDC; ECS names them trace.id/span.id
+      rename:
+        traceId: trace.id
+        spanId: span.id
+  pattern:
+    console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr(%5p) %clr(---){faint} %clr([%15.15t]){faint} %clr(${LOG_CORRELATION_PATTERN:-}){faint}%clr(%-40.40logger{39}){cyan} %clr(:){faint} %m %kvp%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
+
+---
+spring:
+  config:
+    activate:
+      on-profile: docker, k8s
+
+logging:
+  structured:
+    format:
+      console: ecs

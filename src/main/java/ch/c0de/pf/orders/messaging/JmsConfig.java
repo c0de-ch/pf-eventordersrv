@@ -1,6 +1,6 @@
 package ch.c0de.pf.orders.messaging;
 
-import ch.c0de.pf.orders.order.OrderCreatedEvent;
+import ch.c0de.pf.orders.order.OrderAcceptedEvent;
 import jakarta.jms.ConnectionFactory;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -25,7 +25,7 @@ class JmsConfig {
         JacksonJsonMessageConverter converter = new JacksonJsonMessageConverter(jsonMapper);
         converter.setTargetType(MessageType.TEXT);
         converter.setTypeIdPropertyName(JmsOutboxPublisher.TYPE_PROPERTY);
-        converter.setTypeIdMappings(Map.of(OrderCreatedEvent.TYPE, OrderCreatedEvent.class));
+        converter.setTypeIdMappings(Map.of(OrderAcceptedEvent.TYPE, OrderAcceptedEvent.class));
         return converter;
     }
 

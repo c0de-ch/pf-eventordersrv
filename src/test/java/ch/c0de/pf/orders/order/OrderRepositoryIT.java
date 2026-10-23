@@ -1,6 +1,6 @@
 package ch.c0de.pf.orders.order;
 
-import static ch.c0de.pf.orders.order.OrderStatus.CREATED;
+import static ch.c0de.pf.orders.order.OrderStatus.ACCEPTED;
 import static ch.c0de.pf.orders.order.OrderStatus.FAILED;
 import static ch.c0de.pf.orders.order.OrderStatus.PROCESSING;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -89,7 +89,7 @@ class OrderRepositoryIT {
         orders.saveAndFlush(processing);
         orders.saveAndFlush(OrderTestData.newOrder("c-other"));
 
-        Page<Order> page = orders.findAll(new OrderFilter("c-filter", CREATED).toSpecification(),
+        Page<Order> page = orders.findAll(new OrderFilter("c-filter", ACCEPTED).toSpecification(),
             PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "id")));
 
         assertThat(page.getContent()).extracting(Order::getId).containsExactly(newer.getId(), older.getId());
@@ -106,7 +106,7 @@ class OrderRepositoryIT {
 
         Order reloaded = orders.findWithHistoryById(id).orElseThrow();
 
-        assertThat(reloaded.getHistory()).extracting(OrderStatusHistory::getToStatus).containsExactly(CREATED, PROCESSING, FAILED);
+        assertThat(reloaded.getHistory()).extracting(OrderStatusHistory::getToStatus).containsExactly(ACCEPTED, PROCESSING, FAILED);
         assertThat(reloaded.getHistory()).extracting(OrderStatusHistory::getCreatedAt).containsOnly(T0);
         assertThat(reloaded.getHistory().getLast().getReason()).isEqualTo("downstream timeout");
     }

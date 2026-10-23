@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import ch.c0de.pf.orders.order.OrderMetrics;
 import ch.c0de.pf.orders.order.OrderService;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
@@ -22,6 +23,9 @@ class DeadLetterListenerTest {
     OrderService orders;
 
     @Mock
+    OrderMetrics metrics;
+
+    @Mock
     Message message;
 
     @InjectMocks
@@ -31,11 +35,12 @@ class DeadLetterListenerTest {
     void marksOrderFailedFromCorrelationId() throws JMSException {
         when(message.getJMSCorrelationID()).thenReturn("42");
         when(message.propertyExists("_AMQ_ORIG_QUEUE")).thenReturn(true);
-        when(message.getStringProperty("_AMQ_ORIG_QUEUE")).thenReturn("order.created");
+        when(message.getStringProperty("_AMQ_ORIG_QUEUE")).thenReturn("order.accepted");
 
         listener.onDeadLetter(message);
 
         verify(orders).failProcessing(eq(42L), contains("dead-lettered"));
+        verify(metrics).deadLettered();
     }
 
     @Test

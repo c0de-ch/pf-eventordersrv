@@ -4,12 +4,12 @@ import java.util.EnumSet;
 import java.util.Set;
 
 public enum OrderStatus {
-    CREATED, PROCESSING, PROCESSED, FAILED;
+    ACCEPTED, PROCESSING, PROCESSED, FAILED;
 
     public Set<OrderStatus> successors() {
         return switch (this) {
-            // CREATED -> FAILED covers messages dead-lettered before processing started
-            case CREATED -> EnumSet.of(PROCESSING, FAILED);
+            // ACCEPTED -> FAILED covers messages dead-lettered before processing started
+            case ACCEPTED -> EnumSet.of(PROCESSING, FAILED);
             case PROCESSING -> EnumSet.of(PROCESSED, FAILED);
             case PROCESSED, FAILED -> EnumSet.noneOf(OrderStatus.class);
         };

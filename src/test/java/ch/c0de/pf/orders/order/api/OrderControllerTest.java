@@ -51,8 +51,8 @@ class OrderControllerTest {
         assertThat(result).hasStatus(HttpStatus.CREATED);
         assertThat(result.getResponse().getHeader("Location")).isEqualTo("http://localhost/orders/42");
         assertThat(result).bodyJson().extractingPath("$.id").isEqualTo(42);
-        assertThat(result).bodyJson().extractingPath("$.status").isEqualTo("CREATED");
-        assertThat(result).bodyJson().extractingPath("$.history[0].to").isEqualTo("CREATED");
+        assertThat(result).bodyJson().extractingPath("$.status").isEqualTo("ACCEPTED");
+        assertThat(result).bodyJson().extractingPath("$.history[0].to").isEqualTo("ACCEPTED");
     }
 
     @Test
@@ -89,7 +89,7 @@ class OrderControllerTest {
 
         assertThat(result).hasStatusOk();
         assertThat(result).bodyJson().extractingPath("$.status").isEqualTo("PROCESSING");
-        assertThat(result).bodyJson().extractingPath("$.history[*].to").asArray().containsExactly("CREATED", "PROCESSING");
+        assertThat(result).bodyJson().extractingPath("$.history[*].to").asArray().containsExactly("ACCEPTED", "PROCESSING");
     }
 
     @Test
@@ -120,10 +120,10 @@ class OrderControllerTest {
 
     @Test
     void listsOrdersAsPage() {
-        when(service.find(eq(new OrderFilter("12345", OrderStatus.CREATED)), any()))
+        when(service.find(eq(new OrderFilter("12345", OrderStatus.ACCEPTED)), any()))
             .thenReturn(new PageImpl<>(List.of(OrderTestData.persistedOrder(1L)), PageRequest.of(0, 20), 1));
 
-        MvcTestResult result = mvc.get().uri("/orders?customerId=12345&status=CREATED").exchange();
+        MvcTestResult result = mvc.get().uri("/orders?customerId=12345&status=ACCEPTED").exchange();
 
         assertThat(result).hasStatusOk();
         assertThat(result).bodyJson().extractingPath("$.content[0].id").isEqualTo(1);

@@ -1,6 +1,6 @@
 package ch.c0de.pf.orders.messaging;
 
-import ch.c0de.pf.orders.order.OrderCreatedEvent;
+import ch.c0de.pf.orders.order.OrderAcceptedEvent;
 import ch.c0de.pf.orders.outbox.OutboxEvent;
 import ch.c0de.pf.orders.outbox.OutboxPublisher;
 import jakarta.jms.TextMessage;
@@ -34,7 +34,7 @@ public class JmsOutboxPublisher implements OutboxPublisher {
 
     private String destinationFor(String eventType) {
         return switch (eventType) {
-            case OrderCreatedEvent.TYPE -> properties.orderCreatedQueue();
+            case OrderAcceptedEvent.TYPE -> properties.orderAcceptedQueue();
             default -> throw new IllegalArgumentException("no destination for event type " + eventType);
         };
     }
