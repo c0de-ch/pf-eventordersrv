@@ -19,12 +19,13 @@ public class OrderProcessingService {
     }
 
     // Two short transactions around the work: a crash mid-way leaves PROCESSING, and redelivery resumes it.
-    // The observation around the work is one timer (order_processing_seconds) and one span.
+    // The observation around the work is one timer (order_processing_seconds) and one span; order.id goes to the span only.
     public void process(Long orderId) {
         orders.startProcessing(orderId).ifPresent(order -> {
             Observation.createNotStarted("order.processing", observations)
                 .contextualName("order processing")
                 .lowCardinalityKeyValue("order.currency", order.getCurrency())
+                .highCardinalityKeyValue("order.id", String.valueOf(order.getId()))
                 .observe(() -> processor.process(order));
             orders.completeProcessing(orderId);
         });

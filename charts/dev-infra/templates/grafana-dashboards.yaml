@@ -1,0 +1,21 @@
+{{- if .Values.otelLgtm.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-grafana-dashboards
+  labels:
+    {{- include "dev-infra.labels" . | nindent 4 }}
+    app.kubernetes.io/name: otel-lgtm
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+      - name: orders
+        folder: Orders
+        type: file
+        allowUiUpdates: false
+        options:
+          path: /otel-lgtm/dashboards
+          foldersFromFilesStructure: false
+{{ (.Files.Glob "files/grafana/*.json").AsConfig | indent 2 }}
+{{- end }}

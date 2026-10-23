@@ -77,6 +77,12 @@ management:
     enable:
       # a relay poll every second must not produce a trace per poll
       "[tasks.scheduled.execution]": false
+  metrics:
+    distribution:
+      # percentiles on the dashboard need buckets; only the two business timers pay for them
+      percentiles-histogram:
+        "[order.processing]": true
+        "[order.lifecycle]": true
   otlp:
     metrics:
       export:

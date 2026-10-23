@@ -49,12 +49,13 @@ logs: ## Follow application logs
 clean: ## Remove build output
 	$(MVN) clean
 
-lint: ## Lint the Helm charts and check the broker policy copy
+lint: ## Lint the Helm charts and check the broker policy and dashboard copies
 	helm lint charts/order-service charts/order-ui charts/dev-infra
 	helm lint charts/order-service -f charts/order-service/values-kind.yaml
 	helm lint charts/order-service -f charts/order-service/values-prod.example.yaml
 	helm lint charts/order-ui -f charts/order-ui/values-kind.yaml
 	cmp deploy/artemis/broker.xml charts/dev-infra/files/broker.xml
+	cmp deploy/grafana/dashboards/order-service.json charts/dev-infra/files/grafana/order-service.json
 
 kind-up: ## Create the kind cluster "orders" (your current kubectl context stays active)
 	@kind get clusters 2>/dev/null | grep -qx $(KIND_CLUSTER) && echo "kind cluster $(KIND_CLUSTER) exists" || { \

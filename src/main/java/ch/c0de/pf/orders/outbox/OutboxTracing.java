@@ -40,6 +40,7 @@ public class OutboxTracing {
         Span span = propagator.extract(Map.of(TRACEPARENT, event.getTraceContext()), Map::get)
             .name("outbox publish")
             .tag("outbox.event_id", String.valueOf(event.getId()))
+            .tag("outbox.aggregate_id", String.valueOf(event.getAggregateId()))
             .start();
         try (Tracer.SpanInScope scope = tracer.withSpan(span)) {
             publish.run();

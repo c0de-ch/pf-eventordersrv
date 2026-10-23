@@ -1,0 +1,11 @@
+# Grafana file provider; compose mounts it into otel-lgtm, the dev-infra chart ships the same via ConfigMap
+apiVersion: 1
+providers:
+  - name: orders
+    folder: Orders
+    type: file
+    allowUiUpdates: false
+    updateIntervalSeconds: 10
+    options:
+      path: /otel-lgtm/dashboards
+      foldersFromFilesStructure: false
