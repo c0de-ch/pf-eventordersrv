@@ -1,0 +1,8 @@
+{{ .Chart.Name }} {{ .Chart.Version }} released as {{ .Release.Name }} in namespace {{ .Release.Namespace }}.
+{{- if and (eq .Values.service.type "NodePort") .Values.service.nodePort }}
+UI:   http://localhost:{{ .Values.service.nodePort }}/ (NodePort)
+{{- else }}
+UI:   kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ include "order-ui.fullname" . }} 8081:{{ .Values.service.port }} then http://localhost:8081/
+{{- end }}
+API:  proxied at /api/* to {{ .Values.apiUpstream }}
+Test: helm test {{ .Release.Name }} --namespace {{ .Release.Namespace }}

@@ -24,10 +24,11 @@ jobs:
         with:
           cluster_name: orders
           config: deploy/kind/cluster.yaml
-      - name: Build and load the image
+      - name: Build and load the images
         run: |
           docker build -t order-service:ci .
-          kind load docker-image order-service:ci --name orders
+          docker build -t order-ui:ci ui
+          kind load docker-image order-service:ci order-ui:ci --name orders
       - name: Install the charts (no Grafana stack here, telemetry is covered by the compose path)
         run: |
           helm upgrade --install dev-infra charts/dev-infra -n orders --create-namespace \
@@ -35,14 +36,19 @@ jobs:
           helm upgrade --install order-service charts/order-service -n orders \
             -f charts/order-service/values-kind.yaml --set image.tag=ci --set config.otel.endpoint= \
             --wait --timeout 5m
-      - name: Helm test
-        run: helm test order-service -n orders
-      - name: Smoke test through the NodePort
-        run: scripts/smoke-test.sh http://localhost:30080
+          helm upgrade --install order-ui charts/order-ui -n orders \
+            -f charts/order-ui/values-kind.yaml --set image.tag=ci --wait --timeout 3m
+      - name: Helm tests
+        run: |
+          helm test order-service -n orders
+          helm test order-ui -n orders
+      - name: Smoke test through the NodePorts
+        run: UI_URL=http://localhost:30081 scripts/smoke-test.sh http://localhost:30080
       - name: Diagnostics
         if: failure()
         run: |
           kubectl -n orders get pods,svc,events -o wide || true
           kubectl -n orders describe pods -l app.kubernetes.io/name=order-service || true
           kubectl -n orders logs deploy/order-service --tail=300 || true
+          kubectl -n orders logs deploy/order-ui --tail=50 || true
           kubectl -n orders logs deploy/dev-infra-artemis --tail=100 || true

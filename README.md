@@ -8,7 +8,7 @@ Event-driven order service: `POST /orders` stores an order, publishes an `order.
 
 | How | Command |
 |-----|---------|
-| Full stack in containers | `make up` builds the image and starts Postgres, Artemis, the Grafana stack and the app; `make smoke` runs the end-to-end check; `make down` stops everything |
+| Full stack in containers | `make up` builds the images and starts Postgres, Artemis, the Grafana stack, the app and the UI (http://localhost:8081); `make smoke` runs the end-to-end check; `make down` stops everything |
 | Dev loop | `./mvnw spring-boot:run` (Postgres, Artemis and the Grafana stack start from `compose.yaml`) |
 | Tests | `./mvnw verify` (Testcontainers, needs Docker) |
 
@@ -67,11 +67,15 @@ A consumer reads `order.accepted` in a transacted JMS session, moves the order t
 
 The app is configured with the standard OpenTelemetry variables; without an endpoint nothing is exported. Locally `docker compose` runs `grafana/otel-lgtm` (Grafana on http://localhost:3000, OTLP on 4317/4318) and `./mvnw spring-boot:run` connects to it automatically.
 
+## User interface
+
+`ui/` is a small Angular 22 application (standalone components, signals, reactive forms, Vitest, ESLint): an order list with status filter and paging, a create form that shows the API's problem details per field, and an order page with the lifecycle timeline that refreshes until the order is final. It calls `/api/*`; the dev server proxies that to `localhost:8080` (`npm start` in `ui/`, Node 24), the image serves it with unprivileged nginx that proxies to the service (`API_UPSTREAM`). `make ui-check` runs lint, tests and build.
+
 ## Kubernetes
 
 | Where | How |
 |-------|-----|
-| Local kind cluster | `make kind-up kind-deploy`: creates cluster `orders`, loads the image, installs `charts/dev-infra` (PostgreSQL, Artemis, Grafana stack) and `charts/order-service`, runs `helm test` and the smoke test. API on http://localhost:30080, Grafana on http://localhost:30300. `make kind-down` removes it. |
+| Local kind cluster | `make kind-up kind-deploy`: creates cluster `orders`, loads the image, installs `charts/dev-infra` (PostgreSQL, Artemis, Grafana stack), `charts/order-service` and `charts/order-ui`, runs the Helm tests and the smoke test. UI on http://localhost:30081, API on http://localhost:30080, Grafana on http://localhost:30300. `make kind-down` removes it. |
 | Any cluster | `helm upgrade --install order-service charts/order-service -n orders -f my-values.yaml` with the database, broker and collector of the platform; see `charts/order-service/values-prod.example.yaml`. |
 
 The `order-service` chart runs the image as a non-root user on a read-only filesystem with startup, liveness and readiness probes on the actuator endpoints, memory limits without CPU throttling, a config checksum that rolls pods on config changes, and optional HPA, PodDisruptionBudget, ServiceMonitor and Ingress. Credentials come from an existing Secret (`secrets.existingSecret`, keys `DB_PASSWORD` and `ARTEMIS_PASSWORD`). `worker.separate=true` splits the release into API pods (relay on, consumers off) and worker pods (consumers on) from the same image. `make lint` runs `helm lint` for all value files. The `dev-infra` chart is for development and tests only.
@@ -88,7 +92,7 @@ Dependabot keeps Maven dependencies, actions and base images current. `deploy/ar
 
 ## Stack
 
-Java 25 · Spring Boot 4.1 · Spring Web MVC · Spring Data JPA · Flyway · PostgreSQL 17 · JMS via ActiveMQ Artemis · Actuator + Micrometer · Testcontainers · Maven wrapper
+Java 25 · Spring Boot 4.1 · Spring Web MVC · Spring Data JPA · Flyway · PostgreSQL 17 · JMS via ActiveMQ Artemis · Actuator + Micrometer + OpenTelemetry · Testcontainers · Maven wrapper · Angular 22 · nginx · Docker Compose · Helm · kind · GitHub Actions
 
 ## Configuration
 
@@ -98,7 +102,7 @@ Java 25 · Spring Boot 4.1 · Spring Web MVC · Spring Data JPA · Flyway · Pos
 | `DB_USER`, `DB_PASSWORD` | `orders`, `orders` | Database credentials |
 | `ARTEMIS_URL` | `tcp://localhost:61616` | Broker URL |
 | `ARTEMIS_USER`, `ARTEMIS_PASSWORD` | `artemis`, `artemis` | Broker credentials |
-| `SERVER_PORT` | `8080` | HTTP port (`APP_PORT` maps it on the compose host) |
+| `SERVER_PORT` | `8080` | HTTP port (`APP_PORT` maps it on the compose host, `UI_PORT` the UI, default 8081) |
 | `ORDERS_MESSAGING_ORDER_ACCEPTED_QUEUE` | `order.accepted` | Queue for `OrderAccepted` events |
 | `ORDERS_MESSAGING_ORDER_ACCEPTED_DLQ` | `DLQ.order.accepted` | Dead-letter queue of `order.accepted` |
 | `ORDERS_WORKER_ENABLED` | `true` | Run the consumers in this instance |

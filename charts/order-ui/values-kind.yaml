@@ -1,0 +1,7 @@
+image:
+  repository: order-ui
+  tag: local
+  pullPolicy: Never
+service:
+  type: NodePort
+  nodePort: 30081

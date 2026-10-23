@@ -1,0 +1,10 @@
+<header class="topbar">
+  <a routerLink="/orders" class="brand">Order Service</a>
+  <nav>
+    <a routerLink="/orders" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Orders</a>
+    <a routerLink="/orders/new" routerLinkActive="active">New order</a>
+  </nav>
+</header>
+<main class="container">
+  <router-outlet />
+</main>

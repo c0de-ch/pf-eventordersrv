@@ -44,4 +44,9 @@ metrics=$(curl -s --max-time 10 -w '\n__http_%{http_code}' "$BASE/actuator/prome
 grep -q '^orders_accepted_total' <<<"$metrics" \
   || fail "orders_accepted_total missing ($(tail -1 <<<"$metrics"), $(grep -cE '^[a-z]' <<<"$metrics") metric lines, e.g. $(grep -m2 -E '^orders_|^order_' <<<"$metrics" | tr '\n' ' '))"
 curl -sf "$BASE/v3/api-docs" | jq -e '.paths["/orders"]' >/dev/null || fail "OpenAPI document missing"
+if [ -n "${UI_URL:-}" ]; then
+  echo "7. UI serves the app and proxies the API ($UI_URL)"
+  curl -sf --max-time 10 "$UI_URL/" | grep -q '<app-root' || fail "UI index page missing at $UI_URL"
+  curl -sf --max-time 10 "$UI_URL/api/orders/$id" | jq -e '.status' >/dev/null || fail "UI proxy to the API failed"
+fi
 echo "PASS: order service smoke test against $BASE"

@@ -1,0 +1,9 @@
+apiVersion: v2
+name: order-ui
+description: Angular front end for order-service, served by unprivileged nginx which proxies /api to the service.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords: [orders, angular, nginx]
+sources:
+  - https://github.com/c0de-ch/pf-eventordersrv

@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "order-ui.fullname" . }}-test-connection
+  labels:
+    {{- include "order-ui.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: hook-succeeded
+spec:
+  restartPolicy: Never
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: index
+      image: busybox:1.37.0
+      # the page itself and the API through the nginx proxy
+      command: ["sh", "-c", "wget -q -O - http://{{ include "order-ui.fullname" . }}:{{ .Values.service.port }}/ | grep -q '<app-root' && wget -q -O - http://{{ include "order-ui.fullname" . }}:{{ .Values.service.port }}/api/actuator/health/readiness | grep -q UP"]
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: [ALL]

@@ -1,0 +1,59 @@
+<h1>Orders</h1>
+
+<form class="filters" (submit)="$event.preventDefault(); search()">
+  <label>
+    Customer
+    <input #customer type="text" [value]="customerId()" (input)="customerId.set(customer.value)" placeholder="e.g. 12345" />
+  </label>
+  <label>
+    Status
+    <select #state [value]="status()" (change)="status.set($any(state.value))">
+      <option value="">all</option>
+      @for (s of statuses; track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
+  </label>
+  <button type="submit" [disabled]="loading()">Search</button>
+  <button type="button" (click)="load()" [disabled]="loading()">Refresh</button>
+</form>
+
+@if (error()) {
+  <p class="error" role="alert">{{ error() }}</p>
+}
+
+@if (result(); as page) {
+  <table>
+    <thead>
+      <tr>
+        <th>Id</th>
+        <th>Customer</th>
+        <th class="num">Amount</th>
+        <th>Status</th>
+        <th>Created</th>
+        <th>Updated</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (order of page.content; track order.id) {
+        <tr>
+          <td><a [routerLink]="['/orders', order.id]">{{ order.id }}</a></td>
+          <td>{{ order.customerId }}</td>
+          <td class="num">{{ order.amount | number: '1.2-2' }} {{ order.currency }}</td>
+          <td><span class="badge" [class]="'badge badge-' + order.status">{{ order.status }}</span></td>
+          <td>{{ order.createdAt | date: 'medium' }}</td>
+          <td>{{ order.updatedAt | date: 'medium' }}</td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="6" class="muted">No orders yet. <a routerLink="/orders/new">Create one</a>.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+  <p class="pager">
+    <button type="button" (click)="goTo(page.page.number - 1)" [disabled]="page.page.number === 0 || loading()">Previous</button>
+    <span>page {{ page.page.number + 1 }} of {{ page.page.totalPages || 1 }} · {{ page.page.totalElements }} orders</span>
+    <button type="button" (click)="goTo(page.page.number + 1)" [disabled]="page.page.number + 1 >= page.page.totalPages || loading()">Next</button>
+  </p>
+}

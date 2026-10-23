@@ -1,0 +1,41 @@
+<p><a routerLink="/orders">← Orders</a></p>
+
+@if (error()) {
+  <p class="error" role="alert">{{ error() }}</p>
+}
+
+@if (order(); as order) {
+  <h1>
+    Order {{ order.id }}
+    <span class="badge" [class]="'badge badge-' + order.status">{{ order.status }}</span>
+    @if (polling()) {
+      <small class="muted">refreshing…</small>
+    }
+  </h1>
+  <dl class="facts">
+    <dt>Customer</dt>
+    <dd>{{ order.customerId }}</dd>
+    <dt>Amount</dt>
+    <dd>{{ order.amount | number: '1.2-2' }} {{ order.currency }}</dd>
+    <dt>Created</dt>
+    <dd>{{ order.createdAt | date: 'medium' }}</dd>
+    <dt>Updated</dt>
+    <dd>{{ order.updatedAt | date: 'medium' }}</dd>
+  </dl>
+
+  <h2>Lifecycle</h2>
+  <ol class="timeline">
+    @for (change of order.history; track change.at + change.to) {
+      <li>
+        <span class="when">{{ change.at | date: 'mediumTime' }}</span>
+        <span class="badge" [class]="'badge badge-' + change.to">{{ change.to }}</span>
+        @if (change.from) {
+          <span class="muted">from {{ change.from }}</span>
+        }
+        @if (change.reason) {
+          <span class="reason">{{ change.reason }}</span>
+        }
+      </li>
+    }
+  </ol>
+}
