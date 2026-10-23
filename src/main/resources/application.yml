@@ -80,6 +80,9 @@ management:
   otlp:
     metrics:
       export:
+        # Unlike traces and logs, the OTLP metrics registry pushes to localhost:4318 when no endpoint is
+        # configured; environments with a collector switch it on (MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED=true)
+        enabled: false
         step: 15s
         # same unit as the Prometheus endpoint, so dashboards use one name (order_processing_seconds)
         base-time-unit: seconds

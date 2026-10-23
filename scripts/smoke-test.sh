@@ -40,6 +40,8 @@ code=$(http_code -X POST "$BASE/orders" -H 'Content-Type: application/json' -d '
 echo "5. unknown order is 404"
 code=$(http_code "$BASE/orders/999999999"); [ "$code" = 404 ] || fail "expected 404, got $code"
 echo "6. metrics and API docs"
-curl -sf "$BASE/actuator/prometheus" | grep -q '^orders_accepted_total' || fail "orders_accepted_total missing"
+metrics=$(curl -s --max-time 10 -w '\n__http_%{http_code}' "$BASE/actuator/prometheus")
+grep -q '^orders_accepted_total' <<<"$metrics" \
+  || fail "orders_accepted_total missing ($(tail -1 <<<"$metrics"), $(grep -cE '^[a-z]' <<<"$metrics") metric lines, e.g. $(grep -m2 -E '^orders_|^order_' <<<"$metrics" | tr '\n' ' '))"
 curl -sf "$BASE/v3/api-docs" | jq -e '.paths["/orders"]' >/dev/null || fail "OpenAPI document missing"
 echo "PASS: order service smoke test against $BASE"

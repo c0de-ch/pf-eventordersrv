@@ -21,6 +21,7 @@ data:
   {{- end }}
   {{- with .Values.config.otel.endpoint }}
   OTEL_EXPORTER_OTLP_ENDPOINT: {{ . | quote }}
+  MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED: "true"
   {{- end }}
   {{- range $key, $value := .Values.config.extra }}
   {{ $key }}: {{ $value | quote }}

@@ -108,7 +108,8 @@ Java 25 · Spring Boot 4.1 · Spring Web MVC · Spring Data JPA · Flyway · Pos
 | `ORDERS_OUTBOX_RELAY_ENABLED` | `true` | Run the outbox relay in this instance |
 | `ORDERS_OUTBOX_RELAY_POLL_INTERVAL` | `PT1S` | Delay between relay runs |
 | `ORDERS_OUTBOX_RELAY_BATCH_SIZE` | `50` | Events per relay transaction |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | unset | OTLP collector, e.g. `http://otel-lgtm:4318`; unset disables export |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | unset | OTLP collector, e.g. `http://otel-lgtm:4318`; unset disables trace and log export |
+| `MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED` | `false` | Push metrics over OTLP as well (set it together with the endpoint); the Prometheus endpoint is always on |
 | `OTEL_SERVICE_NAME`, `OTEL_RESOURCE_ATTRIBUTES` | `order-service`, `service.namespace=orders` | Resource attributes seen by the platform |
 | `OTEL_TRACES_SAMPLER_ARG` | `1.0` | Sampling ratio; lower it in production |
 | `DEPLOYMENT_ENVIRONMENT` | `local` | `deployment.environment.name` resource attribute |

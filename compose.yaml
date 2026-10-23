@@ -58,6 +58,7 @@ services:
       ARTEMIS_USER: artemis
       ARTEMIS_PASSWORD: artemis
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
+      MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED: "true"
       DEPLOYMENT_ENVIRONMENT: compose
     ports:
       - "${APP_PORT:-8080}:8080"
