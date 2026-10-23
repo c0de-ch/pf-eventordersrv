@@ -1,0 +1,96 @@
+# Sample OpenTelemetry Collector pipeline: the contract between this service and the platform.
+# The service sends OTLP (traces, metrics, logs) to the collector; the collector enriches, derives
+# RED metrics and a service graph from spans, and forwards to the Grafana stack (Tempo, Mimir, Loki).
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  # Alternative to OTLP metrics push: scrape the actuator endpoint
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: order-service
+          kubernetes_sd_configs:
+            - role: pod
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+              regex: order-service
+              action: keep
+          metrics_path: /actuator/prometheus
+  # Alternative to OTLP logs: read the ECS JSON lines from the container logs (DaemonSet deployment)
+  filelog:
+    include: [/var/log/pods/orders_order-service*/*/*.log]
+    operators:
+      - type: container
+      - type: json_parser
+        parse_from: body
+        timestamp:
+          parse_from: attributes["@timestamp"]
+          layout_type: gotime
+          layout: "2006-01-02T15:04:05.999999999Z07:00"
+        trace:
+          trace_id:
+            parse_from: attributes["trace.id"]
+          span_id:
+            parse_from: attributes["span.id"]
+        severity:
+          parse_from: attributes["log.level"]
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 80
+    spike_limit_percentage: 20
+  k8sattributes:
+    extract:
+      metadata: [k8s.namespace.name, k8s.pod.name, k8s.deployment.name, k8s.node.name]
+  resource:
+    attributes:
+      - key: cluster.name
+        value: ${env:CLUSTER_NAME}
+        action: upsert
+  batch:
+    timeout: 5s
+
+connectors:
+  # RED metrics (rate, errors, duration) from spans, per service and span name
+  spanmetrics:
+    histogram:
+      explicit:
+        buckets: [50ms, 100ms, 250ms, 500ms, 1s, 2s, 5s]
+    dimensions:
+      - name: messaging.destination.name
+      - name: deployment.environment.name
+  # Edges between services (order-service -> artemis -> order-service) for the service map
+  servicegraph:
+    store:
+      ttl: 2s
+      max_items: 1000
+
+exporters:
+  otlp/tempo:
+    endpoint: tempo-distributor.observability:4317
+    tls:
+      insecure: true
+  prometheusremotewrite/mimir:
+    endpoint: http://mimir-nginx.observability/api/v1/push
+  otlphttp/loki:
+    endpoint: http://loki-gateway.observability/otlp
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, k8sattributes, resource, batch]
+      exporters: [otlp/tempo, spanmetrics, servicegraph]
+    metrics:
+      receivers: [otlp, prometheus, spanmetrics, servicegraph]
+      processors: [memory_limiter, k8sattributes, resource, batch]
+      exporters: [prometheusremotewrite/mimir]
+    logs:
+      receivers: [otlp, filelog]
+      processors: [memory_limiter, k8sattributes, resource, batch]
+      exporters: [otlphttp/loki]

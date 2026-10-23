@@ -1,0 +1,48 @@
+name: kind-e2e
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kind-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: azure/setup-helm@v5
+      - uses: helm/kind-action@v1
+        with:
+          cluster_name: orders
+          config: deploy/kind/cluster.yaml
+      - name: Build and load the image
+        run: |
+          docker build -t order-service:ci .
+          kind load docker-image order-service:ci --name orders
+      - name: Install the charts (no Grafana stack here, telemetry is covered by the compose path)
+        run: |
+          helm upgrade --install dev-infra charts/dev-infra -n orders --create-namespace \
+            --set otelLgtm.enabled=false --wait --timeout 5m
+          helm upgrade --install order-service charts/order-service -n orders \
+            -f charts/order-service/values-kind.yaml --set image.tag=ci --set config.otel.endpoint= \
+            --wait --timeout 5m
+      - name: Helm test
+        run: helm test order-service -n orders
+      - name: Smoke test through the NodePort
+        run: scripts/smoke-test.sh http://localhost:30080
+      - name: Diagnostics
+        if: failure()
+        run: |
+          kubectl -n orders get pods,svc,events -o wide || true
+          kubectl -n orders describe pods -l app.kubernetes.io/name=order-service || true
+          kubectl -n orders logs deploy/order-service --tail=300 || true
+          kubectl -n orders logs deploy/dev-infra-artemis --tail=100 || true

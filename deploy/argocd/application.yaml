@@ -1,0 +1,32 @@
+# GitOps sketch: Argo CD deploys the chart from this repository. A release pipeline bumps the image tag
+# in the environment values (or points spec.source at the OCI chart published by release.yml).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: order-service
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/c0de-ch/pf-eventordersrv.git
+    targetRevision: main
+    path: charts/order-service
+    helm:
+      releaseName: order-service
+      valueFiles:
+        - values-prod.example.yaml   # replace with the environment's values file
+      parameters:
+        - name: image.tag
+          value: "1.0.0"             # bumped by the release pipeline
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: orders
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

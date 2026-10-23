@@ -1,5 +1,7 @@
 # Order Service
 
+[![ci](https://github.com/c0de-ch/pf-eventordersrv/actions/workflows/ci.yml/badge.svg)](https://github.com/c0de-ch/pf-eventordersrv/actions/workflows/ci.yml) [![kind-e2e](https://github.com/c0de-ch/pf-eventordersrv/actions/workflows/kind-e2e.yml/badge.svg)](https://github.com/c0de-ch/pf-eventordersrv/actions/workflows/kind-e2e.yml)
+
 Event-driven order service: `POST /orders` stores an order, publishes an `order.accepted` JMS event, and an asynchronous consumer processes it (`ACCEPTED → PROCESSING → PROCESSED`).
 
 ## Run
@@ -73,6 +75,16 @@ The app is configured with the standard OpenTelemetry variables; without an endp
 | Any cluster | `helm upgrade --install order-service charts/order-service -n orders -f my-values.yaml` with the database, broker and collector of the platform; see `charts/order-service/values-prod.example.yaml`. |
 
 The `order-service` chart runs the image as a non-root user on a read-only filesystem with startup, liveness and readiness probes on the actuator endpoints, memory limits without CPU throttling, a config checksum that rolls pods on config changes, and optional HPA, PodDisruptionBudget, ServiceMonitor and Ingress. Credentials come from an existing Secret (`secrets.existingSecret`, keys `DB_PASSWORD` and `ARTEMIS_PASSWORD`). `worker.separate=true` splits the release into API pods (relay on, consumers off) and worker pods (consumers on) from the same image. `make lint` runs `helm lint` for all value files. The `dev-infra` chart is for development and tests only.
+
+## CI/CD and GitOps
+
+| Workflow | Trigger | What it does |
+|----------|---------|--------------|
+| `ci` | push to `main`, pull requests | `./mvnw verify` with Testcontainers, test reports as artifact; `helm lint` and kubeconform for every value set; on `main` the image goes to `ghcr.io/c0de-ch/pf-eventordersrv/order-service` (`sha-<commit>`, `main`) |
+| `kind-e2e` | push to `main`, pull requests | kind cluster from `deploy/kind/cluster.yaml`, both charts, `helm test`, smoke test through the NodePort |
+| `release` | tag `v*` | image `:<version>`, both charts as OCI artifacts under `ghcr.io/c0de-ch/charts`, GitHub release with the chart packages |
+
+Dependabot keeps Maven dependencies, actions and base images current. `deploy/argocd/application.yaml` sketches the GitOps hand-over: Argo CD syncs `charts/order-service` with environment values, and a release bumps the image tag. `deploy/otel/collector.yaml` is the sample collector pipeline, the contract with the platform: OTLP in, `k8sattributes` and batching, `spanmetrics` and `servicegraph` connectors, Tempo, Mimir and Loki out, with scrape and file-log alternatives commented in place.
 
 ## Stack
 
