@@ -19,6 +19,10 @@ ui/node_modules/
 ui/dist/
 ui/.angular/
 
+# Tools
+tools/order-tester/node_modules/
+tools/order-tester/report/
+
 # local
 *.log
 .env

@@ -40,6 +40,12 @@ up: ## Build the image and start the full stack with Docker Compose
 smoke: ## End-to-end smoke test against the running stack (BASE_URL / UI_URL override the targets)
 	UI_URL=$(or $(UI_URL),http://localhost:8081) scripts/smoke-test.sh $(BASE_URL)
 
+blackbox: ## Black-box API check with generated data against BASE_URL (default :8080); report in tools/order-tester/report
+	node tools/order-tester/src/main.ts --base-url $(or $(BASE_URL),http://localhost:8080)
+
+blackbox-check: ## Type-check and test the black-box tester (needs Node 24)
+	cd tools/order-tester && npm ci && npm run check && npm test
+
 down: ## Stop the stack
 	$(COMPOSE) down
 
@@ -83,4 +89,4 @@ kind-logs: ## Follow the application logs in kind
 kind-down: ## Delete the kind cluster "orders"
 	kind delete cluster --name $(KIND_CLUSTER)
 
-.PHONY: help build test verify run image ui-check image-ui up smoke down logs clean lint kind-up kind-deploy kind-logs kind-down
+.PHONY: help build test verify run image ui-check image-ui up smoke blackbox blackbox-check down logs clean lint kind-up kind-deploy kind-logs kind-down
