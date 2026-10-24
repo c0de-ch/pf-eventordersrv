@@ -49,6 +49,18 @@ blackbox-check: ## Type-check and test the black-box tester (needs Node 24)
 down: ## Stop the stack
 	$(COMPOSE) down
 
+TABLES = orders, order_status_history, outbox_event, dead_letter
+QUEUES = order.accepted DLQ.order.accepted.hold DLQ.order.accepted
+PURGE = /var/lib/artemis-instance/bin/artemis queue purge --url tcp://localhost:61616 --user artemis --password artemis --name
+
+reset-db: ## Empty the order tables of the compose stack (ids restart at 1) and purge the queues; the stack keeps running
+	$(COMPOSE) exec -T postgres psql -U orders -d orders -v ON_ERROR_STOP=1 -c "truncate $(TABLES) restart identity"
+	for q in $(QUEUES); do $(COMPOSE) exec -T artemis $(PURGE) $$q || exit 1; done
+
+kind-reset-db: ## Same for the kind cluster
+	$(KUBECTL) -n $(NAMESPACE) exec dev-infra-postgres-0 -- psql -U orders -d orders -v ON_ERROR_STOP=1 -c "truncate $(TABLES) restart identity"
+	for q in $(QUEUES); do $(KUBECTL) -n $(NAMESPACE) exec deploy/dev-infra-artemis -- $(PURGE) $$q || exit 1; done
+
 logs: ## Follow application logs
 	$(COMPOSE) logs -f app
 
@@ -89,4 +101,4 @@ kind-logs: ## Follow the application logs in kind
 kind-down: ## Delete the kind cluster "orders"
 	kind delete cluster --name $(KIND_CLUSTER)
 
-.PHONY: help build test verify run image ui-check image-ui up smoke blackbox blackbox-check down logs clean lint kind-up kind-deploy kind-logs kind-down
+.PHONY: help build test verify run image ui-check image-ui up smoke blackbox blackbox-check down reset-db kind-reset-db logs clean lint kind-up kind-deploy kind-logs kind-down

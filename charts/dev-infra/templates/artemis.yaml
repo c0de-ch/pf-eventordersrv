@@ -28,6 +28,26 @@ spec:
   selector:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/name: artemis
+{{- if .Values.artemis.consoleNodePort }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-artemis-console
+  labels:
+    {{- include "dev-infra.labels" . | nindent 4 }}
+    app.kubernetes.io/name: artemis
+spec:
+  type: NodePort
+  ports:
+    - name: console
+      port: 8161
+      targetPort: console
+      nodePort: {{ .Values.artemis.consoleNodePort }}
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/name: artemis
+{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
