@@ -22,7 +22,8 @@
       <journal-buffer-timeout>8000</journal-buffer-timeout>
       <journal-max-io>4096</journal-max-io>
       <disk-scan-period>5000</disk-scan-period>
-      <max-disk-usage>90</max-disk-usage>
+      <!-- dev/test broker on shared disks: CI runners run above 90 %, blocked producers would stall every order -->
+      <max-disk-usage>-1</max-disk-usage>
       <critical-analyzer>true</critical-analyzer>
       <critical-analyzer-timeout>120000</critical-analyzer-timeout>
       <critical-analyzer-check-period>60000</critical-analyzer-check-period>

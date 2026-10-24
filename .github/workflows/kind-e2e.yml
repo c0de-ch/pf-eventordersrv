@@ -49,6 +49,7 @@ jobs:
       - name: Diagnostics
         if: failure()
         run: |
+          df -h / | tail -1 || true
           kubectl -n orders get pods,svc,events -o wide || true
           kubectl -n orders describe pods -l app.kubernetes.io/name=order-service || true
           kubectl -n orders logs -l app.kubernetes.io/name=order-service --prefix --tail=300 || true
