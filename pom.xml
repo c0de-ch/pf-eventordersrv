@@ -18,7 +18,7 @@
   <properties>
     <java.version>25</java.version>
     <springdoc.version>3.1.1</springdoc.version>
-    <otel-logback-appender.version>2.28.0-alpha</otel-logback-appender.version>
+    <otel-logback-appender.version>2.28.1-alpha</otel-logback-appender.version>
     <archunit.version>1.5.1</archunit.version>
     <!-- JDK 24+ warnings: Mockito agent attach in tests, native access by Netty/JNA, Unsafe use by protobuf -->
     <test.jvm.args>-XX:+EnableDynamicAgentLoading --enable-native-access=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow</test.jvm.args>
