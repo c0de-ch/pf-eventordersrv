@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/himanshu13ps/penciled/main/skills/penciled/schema/architecture.schema.json",
   "version": "0.1",
   "type": "architecture",
-  "title": "Data model: Flyway V1__init.sql",
+  "title": "Data model: Flyway V1__init.sql, V2__dead_letter.sql",
   "direction": "LR",
   "nodes": [
     {
@@ -24,6 +24,14 @@
       "label": "outbox_event",
       "shape": "database",
       "sublabel": "aggregate_type/id, event_type, payload, trace_context",
+      "shade": "light",
+      "group": "tables"
+    },
+    {
+      "id": "deadletter",
+      "label": "dead_letter",
+      "shape": "database",
+      "sublabel": "order_id, event_id, message_id, body, properties",
       "shade": "light",
       "group": "tables"
     },
@@ -50,6 +58,12 @@
       "label": "check constraints",
       "shape": "document",
       "sublabel": "amount > 0; currency ^[A-Z]{3}$; status enum"
+    },
+    {
+      "id": "dlcols",
+      "label": "dead letter evidence",
+      "shape": "document",
+      "sublabel": "origin_queue, trace_id, sent_at; message_id unique"
     }
   ],
   "groups": [
@@ -68,6 +82,13 @@
       "from": "outbox",
       "to": "orders",
       "label": "aggregate_id, no FK",
+      "style": "dashed",
+      "arrow": "none"
+    },
+    {
+      "from": "deadletter",
+      "to": "orders",
+      "label": "order_id, no FK",
       "style": "dashed",
       "arrow": "none"
     },
@@ -92,6 +113,12 @@
     {
       "from": "checks",
       "to": "orders",
+      "style": "dashed",
+      "arrow": "none"
+    },
+    {
+      "from": "dlcols",
+      "to": "deadletter",
       "style": "dashed",
       "arrow": "none"
     }

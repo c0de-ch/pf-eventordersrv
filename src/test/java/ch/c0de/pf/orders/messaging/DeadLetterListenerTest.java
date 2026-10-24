@@ -1,13 +1,9 @@
 package ch.c0de.pf.orders.messaging;
 
-import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import ch.c0de.pf.orders.order.OrderMetrics;
-import ch.c0de.pf.orders.order.OrderService;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import org.junit.jupiter.api.Test;
@@ -20,36 +16,38 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class DeadLetterListenerTest {
 
     @Mock
-    OrderService orders;
-
+    DeadLetterService deadLetters;
     @Mock
     OrderMetrics metrics;
-
     @Mock
     Message message;
-
     @InjectMocks
     DeadLetterListener listener;
 
     @Test
-    void marksOrderFailedFromCorrelationId() throws JMSException {
+    void storesTheDeadLetterAndCountsIt() throws JMSException {
         when(message.getJMSCorrelationID()).thenReturn("42");
-        when(message.propertyExists("_AMQ_ORIG_QUEUE")).thenReturn(true);
-        when(message.getStringProperty("_AMQ_ORIG_QUEUE")).thenReturn("order.accepted");
+        when(deadLetters.handle(message)).thenReturn(deadLetter(42L));
 
         listener.onDeadLetter(message);
 
-        verify(orders).failProcessing(eq(42L), contains("dead-lettered"));
+        verify(deadLetters).handle(message);
         verify(metrics).deadLettered();
     }
 
     @Test
-    void dropsMessagesWithoutUsableOrderId() throws JMSException {
-        when(message.getJMSCorrelationID()).thenReturn(null, "not-a-number");
+    void keepsDeadLettersWithoutUsableOrderId() throws JMSException {
+        when(message.getJMSCorrelationID()).thenReturn(null);
+        when(deadLetters.handle(message)).thenReturn(deadLetter(null));
 
         listener.onDeadLetter(message);
-        listener.onDeadLetter(message);
 
-        verifyNoInteractions(orders);
+        verify(deadLetters).handle(message);
+        verify(metrics).deadLettered();
+    }
+
+    private static DeadLetter deadLetter(Long orderId) {
+        return new DeadLetter(orderId, 7L, "OrderAccepted", "ID:1", null, "order.accepted",
+            orderId == null ? null : String.valueOf(orderId), null, null, "{}", "{}");
     }
 }

@@ -3,6 +3,7 @@ package ch.c0de.pf.orders;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import ch.c0de.pf.orders.messaging.DeadLetterRepository;
 import ch.c0de.pf.orders.outbox.OutboxRepository;
 import java.time.Duration;
 import java.util.List;
@@ -34,6 +35,8 @@ class OrderFlowIT {
 
     @Autowired
     OutboxRepository outbox;
+    @Autowired
+    DeadLetterRepository deadLetters;
 
     @Autowired
     JsonMapper json;
@@ -64,6 +67,15 @@ class OrderFlowIT {
 
         assertThat(statusHistory(orderId)).containsExactly("ACCEPTED", "PROCESSING", "FAILED");
         assertThat(order(orderId).get("history").get(2).get("reason").asString()).contains("dead-lettered");
+        assertThat(deadLetters.findByOrderId(orderId)).singleElement().satisfies(deadLetter -> {
+            assertThat(deadLetter.getOriginQueue()).isEqualTo("order.accepted");
+            assertThat(deadLetter.getEventType()).isEqualTo("OrderAccepted");
+            assertThat(deadLetter.getEventId()).isNotNull();
+            assertThat(json.readTree(deadLetter.getBody()).get("orderId").asLong()).isEqualTo(orderId);
+            assertThat(deadLetter.getSentAt()).isNotNull();
+            assertThat(deadLetter.getTraceId()).matches("[0-9a-f]{32}");
+            assertThat(deadLetter.getProperties()).contains("\"JMSXDeliveryCount\"");
+        });
         assertThat(prometheus()).contains("orders_failed_total", "orders_dead_lettered_total",
             "order_lifecycle_seconds_count{outcome=\"failed\"");
     }
