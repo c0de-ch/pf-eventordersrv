@@ -68,7 +68,9 @@ class OrderFlowIT {
         assertThat(statusHistory(orderId)).containsExactly("ACCEPTED", "PROCESSING", "FAILED");
         assertThat(order(orderId).get("history").get(2).get("reason").asString()).contains("dead-lettered");
         assertThat(deadLetters.findByOrderId(orderId)).singleElement().satisfies(deadLetter -> {
-            assertThat(deadLetter.getOriginQueue()).isEqualTo("order.accepted");
+            // The expiry move from the hold queue overwrites the broker origin headers
+            assertThat(deadLetter.getOriginQueue()).isEqualTo("DLQ.order.accepted.hold");
+            assertThat(deadLetter.getProperties()).contains("\"_AMQ_ACTUAL_EXPIRY\"");
             assertThat(deadLetter.getEventType()).isEqualTo("OrderAccepted");
             assertThat(deadLetter.getEventId()).isNotNull();
             assertThat(json.readTree(deadLetter.getBody()).get("orderId").asLong()).isEqualTo(orderId);

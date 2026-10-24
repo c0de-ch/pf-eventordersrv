@@ -75,17 +75,30 @@
       "group": "worker"
     },
     {
+      "id": "hold",
+      "label": "DLQ.order.accepted.hold",
+      "shape": "queue",
+      "sublabel": "30 s hold, browsable in the console"
+    },
+    {
       "id": "dlq",
       "label": "DLQ.order.accepted",
       "shape": "queue",
-      "sublabel": "after 3 attempts (1 s, 2 s)"
+      "sublabel": "consumed at once"
     },
     {
       "id": "dll",
       "label": "DeadLetterListener",
       "shape": "rounded",
-      "sublabel": "failProcessing: FAILED + reason",
+      "sublabel": "dead_letter row + FAILED with reason",
       "group": "worker"
+    },
+    {
+      "id": "deadletter",
+      "label": "dead_letter",
+      "shape": "database",
+      "sublabel": "body, properties, origin, trace id",
+      "shade": "light"
     }
   ],
   "groups": [
@@ -153,14 +166,25 @@
     },
     {
       "from": "queue",
+      "to": "hold",
+      "label": "3 rollbacks (1 s, 2 s)",
+      "style": "dashed"
+    },
+    {
+      "from": "hold",
       "to": "dlq",
-      "label": "3 rollbacks",
+      "label": "expiry after 30 s",
       "style": "dashed"
     },
     {
       "from": "dlq",
       "to": "dll",
       "label": "deliver"
+    },
+    {
+      "from": "dll",
+      "to": "deadletter",
+      "label": "insert"
     }
   ],
   "paper": {

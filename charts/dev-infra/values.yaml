@@ -21,6 +21,8 @@ artemis:
   user: artemis
   password: artemis
   # files/broker.xml is a copy of deploy/artemis/broker.xml (checked by `make lint`)
+  deadLetterHoldMs: 30000  # dead letters wait in DLQ.order.accepted.hold before the service consumes them
+  expiryScanMs: 5000       # broker cadence for moving expired messages: the hold ends within hold + scan
   resources:
     requests:
       cpu: 250m

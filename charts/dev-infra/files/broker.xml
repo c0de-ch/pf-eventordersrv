@@ -22,6 +22,8 @@
       <journal-buffer-timeout>8000</journal-buffer-timeout>
       <journal-max-io>4096</journal-max-io>
       <disk-scan-period>5000</disk-scan-period>
+      <!-- expired messages move on this cadence: a dead letter leaves the hold queue within hold + scan -->
+      <message-expiry-scan-period>${orders.dlq.scan:5000}</message-expiry-scan-period>
       <!-- dev/test broker on shared disks: CI runners run above 90 %, blocked producers would stall every order -->
       <max-disk-usage>-1</max-disk-usage>
       <critical-analyzer>true</critical-analyzer>
@@ -71,12 +73,19 @@
             <auto-create-addresses>true</auto-create-addresses>
          </address-setting>
          <address-setting match="order.accepted">
-            <dead-letter-address>DLQ.order.accepted</dead-letter-address>
+            <dead-letter-address>DLQ.order.accepted.hold</dead-letter-address>
             <expiry-address>ExpiryQueue</expiry-address>
             <redelivery-delay>1000</redelivery-delay>
             <redelivery-delay-multiplier>2.0</redelivery-delay-multiplier>
             <max-redelivery-delay>10000</max-redelivery-delay>
             <max-delivery-attempts>3</max-delivery-attempts>
+            <max-size-bytes>-1</max-size-bytes>
+            <address-full-policy>PAGE</address-full-policy>
+         </address-setting>
+         <!-- dead letters wait here, visible in the console, until the broker moves them to the queue the service consumes -->
+         <address-setting match="DLQ.order.accepted.hold">
+            <expiry-address>DLQ.order.accepted</expiry-address>
+            <expiry-delay>${orders.dlq.hold:30000}</expiry-delay>
             <max-size-bytes>-1</max-size-bytes>
             <address-full-policy>PAGE</address-full-policy>
          </address-setting>
@@ -118,6 +127,11 @@
          <address name="DLQ.order.accepted">
             <anycast>
                <queue name="DLQ.order.accepted"/>
+            </anycast>
+         </address>
+         <address name="DLQ.order.accepted.hold">
+            <anycast>
+               <queue name="DLQ.order.accepted.hold"/>
             </anycast>
          </address>
       </addresses>

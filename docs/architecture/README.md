@@ -24,7 +24,7 @@ for f in src/*.json; do node /tmp/penciled/skills/penciled/src/cli.js "$f" -o "$
 
 - One deployable, three infrastructure services and one observability container; the same picture on compose (8080, 8081, 3000) and on kind (30080, 30081, 30300).
 - The UI is a separate nginx image that proxies `/api`: no CORS, UI and API ship independently.
-- The arrow to Artemis points both ways: the service publishes `order.accepted` and consumes it plus the dead-letter queue, from the same image through role toggles.
+- The arrow to Artemis points both ways: the service publishes `order.accepted` and consumes it plus the dead-letter queue (after a 30 s stop in `DLQ.order.accepted.hold`), from the same image through role toggles.
 - GitHub Actions and GHCR sit outside the runtime: the cluster pulls images and charts, nothing pushes into it.
 - When the broker is down the API keeps accepting orders; the outbox buffers the events (diagram 02).
 
@@ -35,7 +35,7 @@ for f in src/*.json; do node /tmp/penciled/skills/penciled/src/cli.js "$f" -o "$
 - Order, history row and event commit in one database transaction: no event without an order, no order without an event.
 - The relay is the only JMS producer; `FOR UPDATE SKIP LOCKED` lets several instances relay without double publishing. Delivery is at least once, so the consumer is idempotent.
 - The consumer runs two short transactions around the simulated work: `PROCESSING` is visible, and a crash leaves a state the redelivery resumes.
-- Exception path: session rollback, redelivery after 1 s and 2 s, dead-letter queue after three attempts, `DeadLetterListener` marks the order `FAILED` with a reason. Transient errors (`FLAKY-`) are absorbed by `@Retryable` before that.
+- Exception path: session rollback, redelivery after 1 s and 2 s, `DLQ.order.accepted.hold` after three attempts (30 s hold, browsable in the console), expiry move to `DLQ.order.accepted`, `DeadLetterListener` stores the message in `dead_letter` and marks the order `FAILED` with a reason. Transient errors (`FLAKY-`) are absorbed by `@Retryable` before that.
 - The groups are the role toggles `orders.outbox.relay.enabled` and `orders.worker.enabled`: API-only and worker-only instances come from the same image.
 - A crash at any arrow: before the commit nothing happened; after the commit the relay picks the event up; after publish but before the acknowledgement the duplicate delivery is skipped.
 
@@ -65,7 +65,7 @@ for f in src/*.json; do node /tmp/penciled/skills/penciled/src/cli.js "$f" -o "$
 ![Data model](05-data-model.svg)
 
 - Three tables, all with `bigint identity` ids and audit columns from JPA auditing fed by the one `Clock`.
-- `orders` holds the current state and `version` (optimistic locking); `order_status_history` is append-only (`@Immutable`) with a foreign key; `outbox_event` is generic, so `aggregate_id` has no foreign key.
+- `orders` holds the current state and `version` (optimistic locking); `order_status_history` is append-only (`@Immutable`) with a foreign key; `outbox_event` is generic, so `aggregate_id` has no foreign key. `dead_letter` keeps the evidence of every dead-lettered message (body, properties, origin queue, trace id); its `order_id` has no foreign key either, because a dead letter may name an order that does not exist.
 - The partial index on pending rows keeps the relay query cheap as the table grows; published rows stay as an audit trail, purging is a production step.
 - Check constraints mirror the Bean Validation rules: amount above zero, ISO currency, status enumeration. Flyway owns the schema, Hibernate only validates.
 - Money as `numeric(19,2)` and `BigDecimal`; `timestamptz` everywhere, UTC.

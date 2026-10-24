@@ -30,8 +30,8 @@ echo "2. order is accepted and processed"
 id=$(create 12345 99.90); wait_status "$id" PROCESSED 30
 history=$(curl -sf "$BASE/orders/$id" | jq -r '[.history[].to] | join(",")')
 [ "$history" = "ACCEPTED,PROCESSING,PROCESSED" ] || fail "unexpected history: $history"
-echo "3. failing order ends in FAILED via the dead-letter queue"
-fid=$(create FAIL-1 10); wait_status "$fid" FAILED 60
+echo "3. failing order ends in FAILED via the dead-letter queue (30 s hold)"
+fid=$(create FAIL-1 10); wait_status "$fid" FAILED 120
 reason=$(curl -sf "$BASE/orders/$fid" | jq -r '.history[-1].reason')
 [[ "$reason" == *dead-lettered* ]] || fail "unexpected failure reason: $reason"
 echo "4. validation error is a problem detail"

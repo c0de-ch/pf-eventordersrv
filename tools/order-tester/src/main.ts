@@ -12,7 +12,7 @@ const USAGE = `Usage: node src/main.ts [options]
   --out <dir>             report directory (default <tool>/report)
   --count <n>             generated regular orders (default 10)
   --seed <n>              seed for the generated data and the run token (default: current time)
-  --timeout <seconds>     wait for a FAILED order; a PROCESSED order gets half (default 60)
+  --timeout <seconds>     wait for a FAILED order; a PROCESSED order gets half (default 120)
   --fail-min-seconds <s>  redelivery back-off a FAILED order must have taken (default ${DEFAULT_FAIL_MIN_SECONDS})
   --concurrency <n>       scenarios in flight (default 8)
   --poll <ms>             poll interval while an order is not final (default 500)
@@ -44,7 +44,7 @@ async function main(): Promise<number> {
       out: { type: 'string', default: path.join(import.meta.dirname, '..', 'report') },
       count: { type: 'string', default: '10' },
       seed: { type: 'string', default: String(Date.now() % 2_147_483_647) },
-      timeout: { type: 'string', default: '60' },
+      timeout: { type: 'string', default: '120' },
       'fail-min-seconds': { type: 'string', default: String(DEFAULT_FAIL_MIN_SECONDS) },
       concurrency: { type: 'string', default: '8' },
       poll: { type: 'string', default: '500' },

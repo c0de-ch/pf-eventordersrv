@@ -9,8 +9,8 @@ export interface CatalogueOptions {
   failMinSeconds: number;
 }
 
-// 1 s + 2 s redelivery back-off in the shipped broker policy: a FAILED order cannot be final sooner
-export const DEFAULT_FAIL_MIN_SECONDS = 3;
+// 1 s + 2 s redelivery back-off plus the 30 s dead-letter hold in the shipped broker policy: a FAILED order cannot be final sooner
+export const DEFAULT_FAIL_MIN_SECONDS = 33;
 export const CURRENCIES = ['CHF', 'EUR', 'USD', 'GBP'] as const;
 const FAILED_REASON = 'dead-lettered';
 

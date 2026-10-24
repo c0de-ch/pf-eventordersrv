@@ -35,7 +35,7 @@ Errors are RFC 9457 problem details; Swagger UI at `/swagger-ui.html`.
 
 - Transactional outbox: order, status history and event commit together; a relay publishes to JMS, so a broker outage never blocks the API.
 - Status on `orders`, every transition as a row in `order_status_history`; transitions are validated in the aggregate.
-- Consumer in two short transactions; broker redelivery (3 attempts), then a dead-letter queue whose consumer marks the order `FAILED`; in-process `@Retryable` for transient errors.
+- Consumer in two short transactions; broker redelivery (3 attempts), then 30 s in a dead-letter hold queue for inspection, then a consumer that stores the message in `dead_letter` and marks the order `FAILED`; in-process `@Retryable` for transient errors.
 - One deployable with role toggles for API and worker; packages by feature, guarded by ArchUnit.
 - One trace from REST through the outbox to the consumer, ECS logs with a fixed `event.action` vocabulary, a provisioned Grafana dashboard.
 

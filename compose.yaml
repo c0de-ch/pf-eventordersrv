@@ -22,6 +22,8 @@ services:
     environment:
       ARTEMIS_USER: artemis
       ARTEMIS_PASSWORD: artemis
+      # dead-letter hold and expiry scan in ms (broker.xml defaults); read when the broker instance is created
+      EXTRA_ARGS: "--http-host 0.0.0.0 --relax-jolokia --java-options -Dorders.dlq.hold=${DLQ_HOLD_MS:-30000} --java-options -Dorders.dlq.scan=${DLQ_SCAN_MS:-5000}"
     ports:
       - "${ARTEMIS_PORT:-61616}:61616"
       - "${ARTEMIS_CONSOLE_PORT:-8161}:8161"

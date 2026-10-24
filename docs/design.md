@@ -9,6 +9,7 @@ The flow, the decisions behind it, the assumptions, the messaging contract, the 
 | Decision | Why | Not chosen |
 |----------|-----|------------|
 | Transactional outbox | Order and event commit together: no event without an order, no order without an event; a broker outage does not block the API | Publish after commit (event lost on a crash in between); XA across JDBC and JMS (heavy, poorly supported) |
+| Dead-letter hold and table | A dead letter waits 30 s in `DLQ.order.accepted.hold`, visible in the broker console, then the broker moves it to `DLQ.order.accepted`, where the consumer stores it in `dead_letter` (body, properties, origin, trace id) and fails the order; queryable and the base for a redrive | Consuming at once (nothing to inspect in the broker); holding by delayed redelivery (a scheduled message is invisible to browsing); leaving messages in the queue (invisible to the API); logs only (retention, not queryable per order) |
 | Status on `orders`, transitions in `order_status_history` | The current state is one cheap read, the history is a full audit trail; `Order` validates every transition and appends the row | Hibernate Envers (generic `_aud` tables); event sourcing (more than the task needs) |
 | `bigint identity` ids | Readable (`/orders/1042`), sortable, native to JPA and Postgres | UUIDs (no enumeration, but unreadable); formatted references (need a sequence anyway) |
 | Two short transactions in the consumer | `PROCESSING` is visible while the work runs, no database transaction spans the work, a crash leaves a state the redelivery resumes | One transaction around the whole processing |
@@ -40,7 +41,7 @@ Creating an order writes the order and an `OrderAccepted` event into the same da
 
 ## Processing and error handling
 
-A consumer reads `order.accepted` in a transacted JMS session, moves the order to `PROCESSING`, simulates work and sets `PROCESSED`. Customer ids starting with `FAIL-` fail permanently; ids starting with `FLAKY-` fail once and succeed on the in-process retry. The broker policy lives in `deploy/artemis/broker.xml` (mounted by compose and used by the tests); after changing it, recreate the broker with `docker compose up -d --force-recreate -V artemis`.
+A consumer reads `order.accepted` in a transacted JMS session, moves the order to `PROCESSING`, simulates work and sets `PROCESSED`. Customer ids starting with `FAIL-` fail permanently; ids starting with `FLAKY-` fail once and succeed on the in-process retry. The broker policy lives in `deploy/artemis/broker.xml` (mounted by compose and used by the tests); after changing it, recreate the broker with `docker compose up -d --force-recreate -V artemis`. Dead letters wait 30 s in `DLQ.order.accepted.hold` before the broker moves them to `DLQ.order.accepted`; the hold and the expiry scan are broker JVM properties (`orders.dlq.hold`, `orders.dlq.scan`, see [configuration](configuration.md)).
 
 | Situation | Behaviour |
 |-----------|-----------|
@@ -49,8 +50,8 @@ A consumer reads `order.accepted` in a transacted JMS session, moves the order t
 | Illegal transition, concurrent update | `409` problem detail |
 | Database down | Readiness `DOWN`; `POST /orders` returns `500` problem detail, nothing persisted |
 | Broker down | API keeps accepting orders; events wait in the outbox (`outbox_pending`, `outbox_publish_failures_total`) and are delivered when the broker returns |
-| Processing throws | Session rollback; the broker redelivers after 1 s and 2 s (3 attempts), then moves the message to `DLQ.order.accepted` |
-| Message in `DLQ.order.accepted` | Dead-letter consumer sets the order to `FAILED` with a reason; nothing is retried automatically |
+| Processing throws | Session rollback; the broker redelivers after 1 s and 2 s (3 attempts), then moves the message to `DLQ.order.accepted.hold`, where it waits 30 s (`expiry-delay`) before the broker moves it to `DLQ.order.accepted` |
+| Message in `DLQ.order.accepted` (after the hold) | Dead-letter consumer stores the message in `dead_letter` (body, properties, origin queue, trace id) and sets the order to `FAILED` with a reason, in one transaction; nothing is retried automatically |
 | Transient error (`FLAKY-`) | Retried twice in-process with 200 ms delay, no redelivery |
 | Duplicate delivery | Order already final: acknowledged and skipped |
 | Unknown order id (message) | Logged and acknowledged (poison message) |
@@ -77,7 +78,7 @@ A consumer reads `order.accepted` in a transacted JMS session, moves the order t
 | Unit | Status transitions and history, order validation, service with mocks, processor retry, relay batch, trace context, log customizer, clock offset | `*Test` (surefire) |
 | Web slice | `201` with `Location`, `400` field errors and malformed input, `404`, `409`, paged list | `OrderControllerTest` |
 | Persistence slice | Sequential ids and auditing columns, version bump on transition, filters, history order, `SKIP LOCKED` with two real transactions | `OrderRepositoryIT`, `OutboxRepositoryIT` |
-| Integration | Happy path to `PROCESSED`, `FAIL-` to `FAILED` through the DLQ, `FLAKY-` retry, trace id stored with the event, metric names, health groups, OpenAPI | `OrderFlowIT`, `OrderApiIT`, `OrderServiceApplicationIT` (failsafe, Testcontainers) |
+| Integration | Happy path to `PROCESSED`, `FAIL-` to `FAILED` through the hold queue and the DLQ with the stored dead letter (hold shortened to 2 s in the test broker), `FLAKY-` retry, trace id stored with the event, metric names, health groups, OpenAPI | `OrderFlowIT`, `OrderApiIT`, `OrderServiceApplicationIT` (failsafe, Testcontainers) |
 | Architecture | Package dependencies, no `Instant.now()`, entities audited, controllers in `api` | `ArchitectureTest` (ArchUnit) |
 | UI | API client, form validation with field errors, timeline rendering | Vitest, ESLint (`make ui-check`) |
 | End to end | `scripts/smoke-test.sh` against compose or kind: health, processed and failed path, problem details, metrics, OpenAPI, UI proxy | `make smoke`, `helm test`, `kind-e2e` workflow |

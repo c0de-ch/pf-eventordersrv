@@ -60,6 +60,8 @@ spec:
               value: {{ .Values.artemis.user | quote }}
             - name: ARTEMIS_PASSWORD
               value: {{ .Values.artemis.password | quote }}
+            - name: EXTRA_ARGS
+              value: "--http-host 0.0.0.0 --relax-jolokia --java-options -Dorders.dlq.hold={{ .Values.artemis.deadLetterHoldMs }} --java-options -Dorders.dlq.scan={{ .Values.artemis.expiryScanMs }}"
           ports:
             - name: core
               containerPort: 61616

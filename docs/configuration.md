@@ -10,7 +10,7 @@ Defaults live in `src/main/resources/application.yml`; every value can be overri
 | `ARTEMIS_USER`, `ARTEMIS_PASSWORD` | `artemis`, `artemis` | Broker credentials |
 | `SERVER_PORT` | `8080` | HTTP port (`APP_PORT` maps it on the compose host, `UI_PORT` the UI, default 8081) |
 | `ORDERS_MESSAGING_ORDER_ACCEPTED_QUEUE` | `order.accepted` | Queue for `OrderAccepted` events |
-| `ORDERS_MESSAGING_ORDER_ACCEPTED_DLQ` | `DLQ.order.accepted` | Dead-letter queue of `order.accepted` |
+| `ORDERS_MESSAGING_ORDER_ACCEPTED_DLQ` | `DLQ.order.accepted` | Dead-letter queue the service consumes; dead letters arrive there from `DLQ.order.accepted.hold` after the hold |
 | `ORDERS_WORKER_ENABLED` | `true` | Run the consumers in this instance |
 | `ORDERS_PROCESSING_DELAY` | `PT0.5S` | Simulated processing time |
 | `ORDERS_PROCESSING_FAILING_CUSTOMER_PREFIX` | `FAIL-` | Customer ids whose orders fail permanently |
@@ -28,3 +28,14 @@ Defaults live in `src/main/resources/application.yml`; every value can be overri
 | `ORDERS_CLOCK_OFFSET` | `PT0S` | Shifts the application clock (ISO-8601 duration, e.g. `P30D`, `-PT2H`) for test scenarios. Business timestamps follow it; log and trace timestamps stay real. |
 
 Fixed in `application.yml`: readiness group `readinessState,db`, graceful shutdown 20 s, JMS listener concurrency 2 to 5 with transacted sessions, page size limit 100, percentile histograms for `order.processing` and `order.lifecycle`, OTLP metrics step 15 s.
+
+## Broker
+
+`deploy/artemis/broker.xml` (the same file in compose, in the `dev-infra` chart and in the tests) reads two JVM system properties. The image takes them through `EXTRA_ARGS` (`--java-options -Dname=value`) when the broker instance is created, so compose needs `docker compose up -d --force-recreate -V artemis` after a change.
+
+| Property | Default | Compose variable | Chart value | Purpose |
+|----------|---------|------------------|-------------|---------|
+| `orders.dlq.hold` | `30000` | `DLQ_HOLD_MS` | `artemis.deadLetterHoldMs` | Milliseconds a dead letter waits in `DLQ.order.accepted.hold`, visible in the console, before the broker moves it to `DLQ.order.accepted` |
+| `orders.dlq.scan` | `5000` | `DLQ_SCAN_MS` | `artemis.expiryScanMs` | Cadence of the broker's expiry scan; the hold ends within hold + scan |
+
+Fast demo: `DLQ_HOLD_MS=5000 make up` on a fresh broker instance. The tests run with a hold of 2 s.

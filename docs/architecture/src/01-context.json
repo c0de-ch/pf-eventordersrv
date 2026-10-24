@@ -37,7 +37,7 @@
       "id": "mq",
       "label": "ActiveMQ Artemis",
       "shape": "queue",
-      "sublabel": "order.accepted, DLQ.order.accepted",
+      "sublabel": "order.accepted, DLQ.order.accepted.hold, DLQ.order.accepted",
       "group": "back"
     },
     {

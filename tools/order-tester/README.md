@@ -18,8 +18,8 @@ Needs Node 24 or newer and nothing else: the TypeScript sources run directly, th
 | `--base-url` | `http://localhost:8080` | Service under test |
 | `--count` | `10` | Generated regular orders (random amount with 0 to 2 decimals, random currency) |
 | `--seed` | current time | Seed for the generated data and the run token; the same seed replays the same data |
-| `--timeout` | `60` | Seconds to wait for a `FAILED` order; a `PROCESSED` order gets half |
-| `--fail-min-seconds` | `3` | Redelivery back-off a `FAILED` order must have taken by the service's own clock (1 s + 2 s in `deploy/artemis/broker.xml`) |
+| `--timeout` | `120` | Seconds to wait for a `FAILED` order; a `PROCESSED` order gets half |
+| `--fail-min-seconds` | `33` | Time a `FAILED` order must have taken by the service's own clock: redelivery back-off 1 s + 2 s plus the 30 s dead-letter hold in `deploy/artemis/broker.xml` |
 | `--concurrency` | `8` | Scenarios in flight |
 | `--poll` | `500` | Poll interval in ms while an order is not final |
 | `--out` | `tools/order-tester/report` | Report directory |
@@ -31,7 +31,7 @@ Every customer id of a run starts with the run token (`t<seed in base 36>`), so 
 | Group | Scenarios |
 |-------|-----------|
 | create | Minimal body and default currency, explicit and explicit-null currency, amounts 0.01, integer, one decimal and the 17-digit maximum (compared as text, unrounded), 64-character and unicode customer ids, unknown JSON field, the same request twice (two orders), the generated orders |
-| processing | `FAIL-` ends `FAILED` with the dead-letter reason after the redelivery back-off; `FLAKY-` ends `PROCESSED`; prefix rules are case-sensitive, the prefix alone fails, `FAIL-FLAKY-` fails, `FLAKY-FAIL-` succeeds |
+| processing | `FAIL-` ends `FAILED` with the dead-letter reason after the redelivery back-off and the 30 s dead-letter hold; `FLAKY-` ends `PROCESSED`; prefix rules are case-sensitive, the prefix alone fails, `FAIL-FLAKY-` fails, `FLAKY-FAIL-` succeeds |
 | validation | Empty, blank, missing and 65-character customer id; missing, null, zero, negative, three-decimal, 18-digit, textual and boolean amount; lower-case, two-, four-letter and empty currency; three violations reported together and sorted; malformed JSON, empty body, JSON array, JSON null; `text/plain` and no `Content-Type` (415). Each answer must be an `application/problem+json` body without internals; field errors carry field and message |
 | read | Unknown id (404 with title and detail), non-numeric id (400), negative id (404), id beyond 64 bits (400), `PUT`, `DELETE` and `POST` on an order (405) |
 | list | Totals and paging of the generated orders, duplicates counted twice, nothing persisted for rejected requests, unicode filter, status filter in both directions, page size cap 100, fallbacks for size 0, negative and non-numeric page, newest first, unknown status filter (400) |
