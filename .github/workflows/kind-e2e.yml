@@ -20,6 +20,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: azure/setup-helm@v5
+      - name: Raise the inotify limits for three kubelets on one host (kind known issue)
+        run: sudo sysctl -w fs.inotify.max_user_instances=512 fs.inotify.max_user_watches=524288
       - uses: helm/kind-action@v1
         with:
           cluster_name: orders
@@ -49,6 +51,6 @@ jobs:
         run: |
           kubectl -n orders get pods,svc,events -o wide || true
           kubectl -n orders describe pods -l app.kubernetes.io/name=order-service || true
-          kubectl -n orders logs deploy/order-service --tail=300 || true
+          kubectl -n orders logs -l app.kubernetes.io/name=order-service --prefix --tail=300 || true
           kubectl -n orders logs deploy/order-ui --tail=50 || true
           kubectl -n orders logs deploy/dev-infra-artemis --tail=100 || true

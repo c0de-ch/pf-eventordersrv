@@ -117,3 +117,6 @@ extraEnv: []
 nodeSelector: {}
 tolerations: []
 affinity: {}
+# Spread the pods of each deployment; the chart adds the label selector. Defaults per entry:
+# maxSkew 1, topologyKey kubernetes.io/hostname, whenUnsatisfiable ScheduleAnyway
+topologySpreadConstraints: []   # - topologyKey: topology.kubernetes.io/zone

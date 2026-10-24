@@ -1,4 +1,9 @@
 # Local kind cluster "orders": image loaded with `kind load`, dev-infra chart in the same namespace
+replicaCount: 2
+podDisruptionBudget:
+  enabled: true
+topologySpreadConstraints:
+  - topologyKey: kubernetes.io/hostname
 image:
   repository: order-service
   tag: local

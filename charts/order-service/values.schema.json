@@ -46,6 +46,18 @@
         "dbPassword": { "type": "string" },
         "artemisPassword": { "type": "string" }
       }
+    },
+    "topologySpreadConstraints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "maxSkew": { "type": "integer", "minimum": 1 },
+          "topologyKey": { "type": "string", "minLength": 1 },
+          "whenUnsatisfiable": { "type": "string", "enum": ["DoNotSchedule", "ScheduleAnyway"] }
+        }
+      }
     }
   }
 }

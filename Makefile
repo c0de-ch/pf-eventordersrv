@@ -58,10 +58,13 @@ lint: ## Lint the Helm charts and check the broker policy and dashboard copies
 	cmp deploy/grafana/dashboards/order-service.json charts/dev-infra/files/grafana/order-service.json
 
 kind-up: ## Create the kind cluster "orders" (your current kubectl context stays active)
-	@kind get clusters 2>/dev/null | grep -qx $(KIND_CLUSTER) && echo "kind cluster $(KIND_CLUSTER) exists" || { \
+	@if [ "$$(sysctl -n fs.inotify.max_user_instances 2>/dev/null || echo 512)" -lt 512 ]; then \
+	  echo "warning: fs.inotify.max_user_instances below 512; worker kubelets may fail with 'too many open files' (sudo sysctl fs.inotify.max_user_instances=512)"; fi
+	@if kind get clusters 2>/dev/null | grep -qx $(KIND_CLUSTER); then echo "kind cluster $(KIND_CLUSTER) exists"; else \
 	  prev=$$(kubectl config current-context 2>/dev/null || true); \
-	  kind create cluster --name $(KIND_CLUSTER) --config deploy/kind/cluster.yaml; \
-	  [ -n "$$prev" ] && kubectl config use-context "$$prev" >/dev/null || true; }
+	  kind create cluster --name $(KIND_CLUSTER) --config deploy/kind/cluster.yaml; rc=$$?; \
+	  if [ -n "$$prev" ]; then kubectl config use-context "$$prev" >/dev/null 2>&1 || true; fi; \
+	  exit $$rc; fi
 
 kind-deploy: image image-ui ## Load the images, install all charts, run helm tests and the smoke test
 	kind load docker-image $(IMAGE):$(IMAGE_TAG) $(UI_IMAGE):$(IMAGE_TAG) --name $(KIND_CLUSTER)
@@ -75,7 +78,7 @@ kind-deploy: image image-ui ## Load the images, install all charts, run helm tes
 	UI_URL=http://localhost:30081 scripts/smoke-test.sh http://localhost:30080
 
 kind-logs: ## Follow the application logs in kind
-	$(KUBECTL) -n $(NAMESPACE) logs deploy/order-service -f
+	$(KUBECTL) -n $(NAMESPACE) logs -l app.kubernetes.io/name=order-service --prefix -f
 
 kind-down: ## Delete the kind cluster "orders"
 	kind delete cluster --name $(KIND_CLUSTER)

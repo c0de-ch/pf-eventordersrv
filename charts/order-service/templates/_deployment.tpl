@@ -4,6 +4,7 @@ Parameters: root (chart context), name, component (api|worker), replicas, worker
 */}}
 {{- define "order-service.deployment" -}}
 {{- $root := .root -}}
+{{- $component := .component -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -111,5 +112,17 @@ spec:
       {{- with $root.Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $root.Values.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- range . }}
+        - maxSkew: {{ .maxSkew | default 1 }}
+          topologyKey: {{ .topologyKey | default "kubernetes.io/hostname" }}
+          whenUnsatisfiable: {{ .whenUnsatisfiable | default "ScheduleAnyway" }}
+          labelSelector:
+            matchLabels:
+              {{- include "order-service.selectorLabels" $root | nindent 14 }}
+              app.kubernetes.io/component: {{ $component }}
+        {{- end }}
       {{- end }}
 {{- end -}}

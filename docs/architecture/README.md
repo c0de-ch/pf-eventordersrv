@@ -75,6 +75,7 @@ for f in src/*.json; do node /tmp/penciled/skills/penciled/src/cli.js "$f" -o "$
 ![Kubernetes deployment](06-deployment-kind.svg)
 
 - `make kind-deploy` builds and loads both images, installs `dev-infra`, `order-service` and `order-ui`, then runs `helm test` and the smoke test over the NodePorts.
+- The cluster has one control plane, which maps the NodePorts to the host, and two workers; the service runs two replicas spread over the workers (best effort) with a disruption budget of one, so a drain evicts one API pod at a time while the other keeps serving. The single-instance dev-infra pods are not covered: Postgres is pinned to its node-local volume, and readiness includes the database.
 - The service pod runs non-root on a read-only root filesystem with startup, liveness and readiness probes on actuator endpoints, a memory limit without CPU limit, and a config checksum that rolls pods on config changes.
 - Secrets never sit in values: `existingSecret` with `DB_PASSWORD` and `ARTEMIS_PASSWORD`; the ConfigMap carries the non-secret environment.
 - `worker.separate=true` renders a second Deployment (consumers only) from the same image; the default is one Deployment with both roles.

@@ -9,7 +9,7 @@ API:      kubectl --namespace {{ .Release.Namespace }} port-forward svc/{{ inclu
 Health:   /actuator/health/readiness (database only; the broker is buffered by the outbox)
 Metrics:  /actuator/prometheus
 Verify:   helm test {{ .Release.Name }} --namespace {{ .Release.Namespace }}
-Logs:     kubectl --namespace {{ .Release.Namespace }} logs deploy/{{ include "order-service.fullname" . }} -f
+Logs:     kubectl --namespace {{ .Release.Namespace }} logs -l app.kubernetes.io/name={{ include "order-service.name" . }} --prefix -f
 {{- if .Values.worker.separate }}
 Workers:  deploy/{{ include "order-service.fullname" . }}-worker ({{ .Values.worker.replicaCount }} replicas, consumers only)
 {{- end }}

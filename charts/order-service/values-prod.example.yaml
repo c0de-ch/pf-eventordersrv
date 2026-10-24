@@ -35,3 +35,6 @@ config:
     samplingProbability: "0.1"
 secrets:
   existingSecret: order-service-credentials   # keys DB_PASSWORD, ARTEMIS_PASSWORD
+topologySpreadConstraints:
+  - topologyKey: topology.kubernetes.io/zone
+  - topologyKey: kubernetes.io/hostname

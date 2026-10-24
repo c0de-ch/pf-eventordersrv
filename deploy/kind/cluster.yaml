@@ -1,4 +1,5 @@
-# Local cluster "orders": NodePorts are mapped 1:1 to the host (30080 API, 30081 UI, 30300 Grafana)
+# Local cluster "orders": one control plane with the NodePorts mapped 1:1 to the host (30080 API, 30081 UI,
+# 30300 Grafana), two workers that run the workloads. kube-proxy on the control plane forwards the NodePorts.
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 name: orders
@@ -11,3 +12,5 @@ nodes:
         hostPort: 30081
       - containerPort: 30300
         hostPort: 30300
+  - role: worker
+  - role: worker
