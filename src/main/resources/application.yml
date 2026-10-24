@@ -73,6 +73,8 @@ management:
     resource-attributes:
       "[service.namespace]": orders
       "[deployment.environment.name]": ${DEPLOYMENT_ENVIRONMENT:local}
+      # pod name in Kubernetes, container id in compose: two replicas must not share one metric series
+      "[service.instance.id]": ${HOSTNAME:local}
   observations:
     enable:
       # a relay poll every second must not produce a trace per poll
@@ -95,6 +97,9 @@ management:
 
 logging:
   structured:
+    ecs:
+      service:
+        node-name: ${HOSTNAME:local}
     json:
       customizer: ch.c0de.pf.orders.config.BusinessTimeLogCustomizer
       # Micrometer puts traceId/spanId into MDC; ECS names them trace.id/span.id

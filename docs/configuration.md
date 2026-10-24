@@ -23,6 +23,7 @@ Defaults live in `src/main/resources/application.yml`; every value can be overri
 | `OTEL_SERVICE_NAME`, `OTEL_RESOURCE_ATTRIBUTES` | `order-service`, `service.namespace=orders` | Resource attributes seen by the platform |
 | `OTEL_TRACES_SAMPLER_ARG` | `1.0` | Sampling ratio; lower it in production |
 | `DEPLOYMENT_ENVIRONMENT` | `local` | `deployment.environment.name` resource attribute |
+| `HOSTNAME` | `local` | `service.instance.id` resource attribute and ECS `service.node.name`; Docker and Kubernetes set it (container id, pod name) |
 | `SPRING_PROFILES_ACTIVE` | unset | `docker` or `k8s` switches logs to ECS JSON |
 | `ORDERS_CLOCK_OFFSET` | `PT0S` | Shifts the application clock (ISO-8601 duration, e.g. `P30D`, `-PT2H`) for test scenarios. Business timestamps follow it; log and trace timestamps stay real. |
 

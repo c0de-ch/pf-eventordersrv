@@ -92,7 +92,7 @@ for f in src/*.json; do node /tmp/penciled/skills/penciled/src/cli.js "$f" -o "$
 - A log line is ECS JSON with `trace.id`, `span.id`, `order.id`, the `event.action` vocabulary and `app.time` (business clock): filter Loki by order id, jump to the trace.
 - Locally otel-lgtm replaces collector, backends and Grafana in one container; the application configuration is identical (`OTEL_*` variables).
 - The dashboard `Order Service` (provisioned from `deploy/grafana/`) puts rates, percentiles, the outbox backlog and the trace plus log lines of one order on one page.
-- Resource attributes have one owner: `service.namespace` and `deployment.environment.name` come from the application properties and `DEPLOYMENT_ENVIRONMENT`.
+- Resource attributes have one owner: `service.namespace`, `deployment.environment.name` and `service.instance.id` come from the application properties, `DEPLOYMENT_ENVIRONMENT` and `HOSTNAME` (pod name or container id), so two replicas never share a metric series.
 
 ## 08 CI/CD and GitOps
 

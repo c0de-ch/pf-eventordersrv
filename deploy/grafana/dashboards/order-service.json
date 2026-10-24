@@ -1095,8 +1095,8 @@
             "type": "prometheus",
             "uid": "${ds_prometheus}"
           },
-          "expr": "sum by (messaging_operation, error) (rate(jms_message_process_seconds_count{service_name=\"order-service\"}[1m])) * 60",
-          "legendFormat": "{{messaging_operation}} ({{error}})",
+          "expr": "sum by (messaging_operation) (rate(jms_message_process_seconds_count{service_name=\"order-service\"}[1m])) * 60",
+          "legendFormat": "{{messaging_operation}}",
           "range": true,
           "instant": false
         },
@@ -1106,8 +1106,8 @@
             "type": "prometheus",
             "uid": "${ds_prometheus}"
           },
-          "expr": "sum by (messaging_operation, error) (rate(jms_message_publish_seconds_count{service_name=\"order-service\"}[1m])) * 60",
-          "legendFormat": "{{messaging_operation}} ({{error}})",
+          "expr": "sum by (messaging_operation) (rate(jms_message_publish_seconds_count{service_name=\"order-service\"}[1m])) * 60",
+          "legendFormat": "{{messaging_operation}}",
           "range": true,
           "instant": false
         }

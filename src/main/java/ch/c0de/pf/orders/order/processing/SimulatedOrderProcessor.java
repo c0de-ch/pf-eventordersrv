@@ -25,7 +25,7 @@ public class SimulatedOrderProcessor implements OrderProcessor {
     @Override
     @Retryable(includes = TransientProcessingException.class, maxRetries = 2, delay = 200)
     public void process(Order order) {
-        log.info("processing order orderId={} customerId={} amount={} {}",
+        log.debug("processing order orderId={} customerId={} amount={} {}",
             order.getId(), order.getCustomerId(), order.getAmount(), order.getCurrency());
         pause(properties.delay());
         if (order.getCustomerId().startsWith(properties.failingCustomerPrefix())) {

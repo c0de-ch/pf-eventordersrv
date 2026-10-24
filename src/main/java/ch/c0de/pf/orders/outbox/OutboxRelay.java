@@ -76,7 +76,8 @@ public class OutboxRelay {
             metrics.publishFailed();
             log.atWarn().addKeyValue("event.action", "order.event.publish_failed").addKeyValue("event.id", event.getId())
                 .addKeyValue("order.id", event.getAggregateId()).addKeyValue("attempts", event.getAttempts())
-                .addKeyValue("error", e.toString()).log("order event publish failed");
+                .addKeyValue("error.type", e.getClass().getName()).addKeyValue("error.message", e.getMessage())
+                .log("order event publish failed");
             return false;
         }
     }
