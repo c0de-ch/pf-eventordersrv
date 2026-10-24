@@ -27,6 +27,10 @@ updates:
     directory: /ui
     schedule:
       interval: weekly
+    ignore:
+      # Angular 22 pins TypeScript to 6.0.x
+      - dependency-name: typescript
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
     groups:
       ui:
         patterns: ["*"]
