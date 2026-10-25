@@ -9,7 +9,9 @@ RUN --mount=type=cache,target=/root/.m2 ./mvnw -q -B -DskipTests package \
  && java -Djarmode=tools -jar target/order-service-*.jar extract --layers --destination target/extracted --application-filename app.jar
 
 FROM eclipse-temurin:25.0.4.1_1-jre-alpine
-LABEL org.opencontainers.image.source="https://github.com/c0de-ch/pf-eventordersrv"
+LABEL org.opencontainers.image.title="order-service" \
+      org.opencontainers.image.description="Event-driven order service: REST API, transactional outbox, JMS consumer" \
+      org.opencontainers.image.source="https://github.com/c0de-ch/pf-eventordersrv"
 RUN addgroup -S app && adduser -S -G app -u 10001 app
 WORKDIR /app
 # Layers ordered from least to most volatile, so a code change rebuilds only the last one

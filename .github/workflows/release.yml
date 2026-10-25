@@ -29,22 +29,36 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.IMAGE }}
+          tags: type=semver,pattern={{version}}
+          labels: |
+            org.opencontainers.image.title=order-service
+            org.opencontainers.image.description=Event-driven order service: REST API, transactional outbox, JMS consumer
       - uses: docker/build-push-action@v7
         with:
           context: .
           push: true
-          tags: |
-            ${{ env.IMAGE }}:${{ steps.version.outputs.version }}
-            ${{ env.IMAGE }}:sha-${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=order-service
           cache-to: type=gha,mode=max,scope=order-service
+      - id: ui_meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.UI_IMAGE }}
+          tags: type=semver,pattern={{version}}
+          labels: |
+            org.opencontainers.image.title=order-ui
+            org.opencontainers.image.description=Angular UI for the order service, served by nginx with an /api proxy
       - uses: docker/build-push-action@v7
         with:
           context: ui
           push: true
-          tags: |
-            ${{ env.UI_IMAGE }}:${{ steps.version.outputs.version }}
-            ${{ env.UI_IMAGE }}:sha-${{ github.sha }}
+          tags: ${{ steps.ui_meta.outputs.tags }}
+          labels: ${{ steps.ui_meta.outputs.labels }}
           cache-from: type=gha,scope=order-ui
           cache-to: type=gha,mode=max,scope=order-ui
       - uses: azure/setup-helm@v5
