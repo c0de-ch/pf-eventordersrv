@@ -74,6 +74,7 @@ lint: ## Lint the Helm charts and check the broker policy and dashboard copies
 	helm lint charts/order-ui -f charts/order-ui/values-kind.yaml
 	cmp deploy/artemis/broker.xml charts/dev-infra/files/broker.xml
 	cmp deploy/grafana/dashboards/order-service.json charts/dev-infra/files/grafana/order-service.json
+	cmp deploy/grafana/dashboards/order-service-runtime.json charts/dev-infra/files/grafana/order-service-runtime.json
 
 kind-up: ## Create the kind cluster "orders" (your current kubectl context stays active)
 	@if [ "$$(sysctl -n fs.inotify.max_user_instances 2>/dev/null || echo 512)" -lt 512 ]; then \
